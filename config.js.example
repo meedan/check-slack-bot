@@ -4,6 +4,9 @@ const config = {
     apiKey: 'dev',
     // httpAuth: 'user:password'
   },
+  checkWeb: {
+    url: 'http://localhost:3333',
+  },
   slack: {
     verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
     accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',

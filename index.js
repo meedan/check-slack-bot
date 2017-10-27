@@ -5,6 +5,7 @@ const config = require('./config.js'),
       Lokka = require('lokka').Lokka,
       Transport = require('lokka-transport-http').Transport,
       util = require('util'),
+      header = require('basic-auth-header'),
       VERIFICATION_TOKEN = config.slack.verificationToken,
       ACCESS_TOKEN = config.slack.accessToken;
 
@@ -144,9 +145,9 @@ function verify(data, callback) {
 }
 
 function process(event, callback) {
-  const mainRegexp = new RegExp(config.checkApi.url, 'g');
+  const mainRegexp = new RegExp(config.checkWeb.url, 'g');
   if (!event.bot_id && mainRegexp.test(event.text)) {
-    const regexp = new RegExp(config.checkApi.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
+    const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
 
     while (matches = regexp.exec(event.text)) {
 
