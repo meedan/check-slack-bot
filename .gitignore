@@ -1,4 +1,6 @@
 config.js
+config.js.*
+!config.js.example
 node_modules
 *~
 .*.swo

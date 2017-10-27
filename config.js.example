@@ -1,4 +1,4 @@
-var config = {
+const config = {
   checkApi: {
     url: 'http://localhost:3000',
     apiKey: 'dev',
@@ -6,7 +6,7 @@ var config = {
   },
   slack: {
     verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
-    accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth'
+    accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',
   }
 };
 module.exports = config;
