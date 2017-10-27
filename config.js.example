@@ -1,0 +1,12 @@
+var config = {
+  checkApi: {
+    url: 'http://localhost:3000',
+    apiKey: 'dev',
+    // httpAuth: 'user:password'
+  },
+  slack: {
+    verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
+    accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth'
+  }
+};
+module.exports = config;
