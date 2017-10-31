@@ -8,75 +8,11 @@ const config = require('./config.js'),
       header = require('basic-auth-header'),
       VERIFICATION_TOKEN = config.slack.verificationToken,
       ACCESS_TOKEN = config.slack.accessToken;
+      
+const { formatMessageFromData, t } = require('./helpers.js');
 
 var handleErrors = function(errors, data) {
   console.log('ERROR: ' + util.inspect(errors));
-};
-
-var t = function(str) {
-  return str.replace(/_/g, ' ').replace(/\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
-};
-
-var formatMessageFromData = function(data) {
-  var tags = [];
-  data.tags.edges.forEach(function(tag) {
-    tags.push(tag.node.tag);
-  });
-
-  var statusColor = '#ccc';
-  var statusLabel = data.last_status;
-  var statuses = JSON.parse(data.verification_statuses);
-  statuses.statuses.forEach(function(st) {
-    if (st.id === data.last_status) {
-      statusColor = st.style.color;
-      statusLabel = st.label;
-    }
-  });
-
-  return [
-    {
-      title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + data.metadata.title,
-      title_link: data.metadata.permalink,
-      text: data.metadata.description,
-      color: statusColor,
-      fields: [
-        {
-          title: t('notes'),
-          value: data.log_count,
-          short: true
-        },
-        {
-          title: t('tasks_completed'),
-          value: data.tasks_count.completed + '/' + data.tasks_count.all,
-          short: true
-        },
-        {
-          title: t('added_to_check'),
-          value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
-          short: true
-        },
-        {
-          title: t('last_update'),
-          value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
-          short: true
-        },
-        {
-          title: t('tags'),
-          value: tags.join(', '),
-          short: true
-        },
-        {
-          title: t('project'),
-          value: data.project.title,
-          short: true
-        },
-      ],
-      author_name: data.user.name + ' | ' + t(data.author_role),
-      author_icon: data.user.profile_image,
-      image_url: data.metadata.picture,
-      mrkdwn_in: ['title', 'text', 'fields']
-    }
-  ];
 };
 
 var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
@@ -98,6 +34,9 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
     project_media(ids: $ids) {
       metadata
       last_status
+      last_status_obj {
+        id
+      }
       log_count
       created_at
       updated_at
@@ -128,9 +67,10 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
       console.log('ERROR: ' + util.inspect(errors));
     }
     else {
-      console.log('DEBUG: Asked for project media and response was: ' + util.inspect(resp));
+      console.log('DEBUG: Asked for project media and got response: ' + util.inspect(resp));
       var pm = resp.project_media;
       pm.metadata = JSON.parse(pm.metadata);
+      pm.team = { slug: teamSlug };
       callback(pm);
     }
   })
@@ -141,10 +81,11 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
 
 function verify(data, callback) {
   if (data.token === VERIFICATION_TOKEN) callback(null, data.challenge);
-  else callback("verification failed");   
+  else callback(t('verification_failed'));   
 }
 
 function process(event, callback) {
+  console.log('Request: ' + util.inspect(event));
   const mainRegexp = new RegExp(config.checkWeb.url, 'g');
   if (!event.bot_id && mainRegexp.test(event.text)) {
     const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
@@ -173,8 +114,8 @@ function process(event, callback) {
 
 exports.handler = (data, context, callback) => {
   switch (data.type) {
-    case "url_verification": verify(data, callback); break;
-    case "event_callback": process(data.event, callback); break;
+    case 'url_verification': verify(data, callback); break;
+    case 'event_callback': process(data.event, callback); break;
     default: callback(null);
   }
 };
