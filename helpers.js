@@ -70,7 +70,7 @@ const formatMessageFromData = function(data) {
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
       fallback: data.metadata.permalink,
-      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug, id: data.dbid, link: data.metadata.permalink }),
+      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug, id: data.dbid, graphql_id: data.id, link: data.metadata.permalink }),
       response_type: 'in_channel',
       replace_original: false,
       delete_original: false,
@@ -85,6 +85,12 @@ const formatMessageFromData = function(data) {
         {
           name: 'add_comment',
           text: t('add_comment', true),
+          type: 'button',
+          style: 'primary'
+        },
+        {
+          name: 'edit_title',
+          text: t('edit_title', true),
           type: 'button',
           style: 'primary'
         },

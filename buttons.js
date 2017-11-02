@@ -65,6 +65,7 @@ function changeStatus(data, user, callback) {
   const mutationQuery = `($status: String!, $id: ID!) {
     updateStatus: updateStatus(input: { clientMutationId: "1", id: $id, status: $status }) {
       project_media {
+        id
         dbid
         metadata
         last_status
@@ -143,6 +144,57 @@ function addComment(data, user, callback) {
           type: 'button',
           style: 'default'
         };
+        attachments[0].actions[2] = {
+          name: 'edit_title',
+          text: t('edit_title', true),
+          type: 'button',
+          style: 'primary'
+        };
+        json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
+        
+        const options = {
+          uri: data.response_url,
+          method: 'POST',
+          json: json
+        };
+
+        request(options, function(err, response, body) {
+          console.log('Output from delayed response: ' + body);
+        });
+    
+        console.log('Saved Redis key slack_message_ts:' + data.message_ts);
+      }
+      redis.quit();
+    });
+  });
+}
+
+function editTitle(data, user, callback) {
+  const value = JSON.parse(data.callback_id);
+  const redis = getRedisClient();
+  redis.on('connect', function() {
+    redis.set('slack_message_ts:' + data.message_ts, JSON.stringify({ mode: 'edit_title', object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function(e) {
+      if (e) {
+        console.log('Redis error: ' + e);
+        error(data, callback);
+      }
+      else {
+        let json = { text: t('type_the_title_below') + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
+        callback(null, json);
+
+        let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
+        attachments[0].actions[1] = {
+          name: 'add_comment',
+          text: t('add_comment', true),
+          type: 'button',
+          style: 'primary'
+        };
+        attachments[0].actions[2] = {
+          name: 'type_title',
+          text: t('type_title_below'),
+          type: 'button',
+          style: 'default'
+        };
         json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
         
         const options = {
@@ -177,6 +229,12 @@ function process(data, callback) {
         }
         else if (data.actions[0].name === 'type_comment') {
           callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_comment_inside_the_thread_above') });
+        }
+        else if (data.actions[0].name === 'edit_title') {
+          editTitle(data, json.data, callback);
+        }
+        else if (data.actions[0].name === 'type_title') {
+          callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_title_inside_the_thread_above') });
         }
         else {
           error(data, callback);

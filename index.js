@@ -33,6 +33,7 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
   const projectMediaQuery = `
   query project_media($ids: String!) {
     project_media(ids: $ids) {
+      id
       dbid
       metadata
       last_status
@@ -114,7 +115,7 @@ function process(event, callback) {
     }
   }
 
-  // This message is a comment to a media
+  // This message is a reply to a button action
 
   if (!event.bot_id && event.thread_ts) {
     const redis = getRedisClient();
@@ -127,6 +128,8 @@ function process(event, callback) {
       }
       else {
         const data = JSON.parse(reply.toString());
+
+        // Adding comment
 
         if (data.object_type === 'project_media' && data.mode === 'comment') {
           const url = config.checkApi.url + '/api/admin/user/slack?uid=' + event.user;
@@ -146,10 +149,43 @@ function process(event, callback) {
             }
           });
         }
+
+        // Changing title
+
+        else if (data.object_type === 'project_media' && data.mode === 'edit_title') {
+          const url = config.checkApi.url + '/api/admin/user/slack?uid=' + event.user;
+
+          request.get({ url: url, json: true, headers: { 'X-Check-Token': config.checkApi.apiKey } }, function(err, res, json) {
+            if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
+              updateTitle(event, data, json.data.token, callback, function(resp) {
+                const obj = resp.updateProjectMedia.project_media;
+                obj.metadata = JSON.parse(obj.metadata);
+                obj.team = { slug: data.team_slug };
+                
+                let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
+
+                request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' } }, function(err, res, resjson) {
+                  if (err) {
+                    console.log('Error when trying to update Slack message: ' + err);
+                  }
+                });
+
+                message = { text: t('title_was_changed_successfully_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                            response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                query = qs.stringify(message);
+                https.get('https://slack.com/api/chat.postMessage?' + query);
+              });
+            }
+            else {
+              console.log('Error when trying to identify Slack user: ' + util.inspect(err));
+              sendErrorMessage(callback, event.thread_ts, event.channel, data.link);
+            }
+          });
+        }
       }
         
       redis.quit();
-    });   
+    });
   }
 
   callback(null);
@@ -215,6 +251,68 @@ function createComment(event, data, token, callback, done) {
     }
   }).catch(function(e) {
     console.log('Error when creating comment: ' + util.inspect(e));
+    sendErrorMessage(callback, thread, channel, data.link);
+  });
+}
+
+function updateTitle(event, data, token, callback, done) {
+  const id = data.graphql_id,
+        text = event.text,
+        thread = event.thread_ts,
+        channel = event.channel,
+        team = data.team_slug;
+
+  const mutationQuery = `($embed: String!, $id: ID!) {
+    updateProjectMedia: updateProjectMedia(input: { clientMutationId: "1", embed: $embed, id: $id }) {
+      project_media {
+        id
+        dbid
+        metadata
+        last_status
+        last_status_obj {
+          id
+        }
+        log_count
+        created_at
+        updated_at
+        tasks_count
+        project {
+          title
+        }
+        tags {
+          edges {
+            node {
+              tag
+            }
+          }
+        }
+        author_role
+        user {
+          name
+          profile_image
+        }
+        verification_statuses
+      }
+    }
+  }`;
+  
+  const vars = {
+    embed: JSON.stringify({ title: text }),
+    id: id
+  };
+
+  const client = getClient(team, token, callback);
+
+  client.mutate(mutationQuery, vars).then(function(resp, err) {
+    if (!err && resp) {
+      done(resp);
+    }
+    else {
+      console.log('Error when editing title: ' + util.inspect(err));
+      sendErrorMessage(callback, thread, channel, data.link);
+    }
+  }).catch(function(e) {
+    console.log('Error when editing title: ' + util.inspect(e));
     sendErrorMessage(callback, thread, channel, data.link);
   });
 }
