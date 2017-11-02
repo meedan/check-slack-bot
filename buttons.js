@@ -7,7 +7,7 @@ const config = require('./config.js'),
       VERIFICATION_TOKEN = config.slack.verificationToken,
       ACCESS_TOKEN = config.slack.accessToken;
 
-const { formatMessageFromData, t } = require('./helpers.js');
+const { formatMessageFromData, t, getRedisClient } = require('./helpers.js');
 
 function verify(data, callback) {
   if (data.token === VERIFICATION_TOKEN) callback(null, data.challenge);
@@ -15,7 +15,7 @@ function verify(data, callback) {
 }
 
 var error = function(data, callback) {
-  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('open_check_to_continue') + ': ' + data.original_message.attachments[0].title_link });
+  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('open_Check_to_continue') + ': ' + data.original_message.attachments[0].title_link });
 };
 
 function getClient(data, user, callback) {
@@ -65,6 +65,7 @@ function changeStatus(data, user, callback) {
   const mutationQuery = `($status: String!, $id: ID!) {
     updateStatus: updateStatus(input: { clientMutationId: "1", id: $id, status: $status }) {
       project_media {
+        dbid
         metadata
         last_status
         last_status_obj {
@@ -122,6 +123,45 @@ function changeStatus(data, user, callback) {
   });
 }
 
+function addComment(data, user, callback) {
+  const value = JSON.parse(data.callback_id);
+  const redis = getRedisClient();
+  redis.on('connect', function() {
+    redis.set('slack_message_ts:' + data.message_ts, JSON.stringify({ mode: 'comment', object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug }), function(e) {
+      if (e) {
+        console.log('Redis error: ' + e);
+        error(data, callback);
+      }
+      else {
+        let json = { text: t('type_your_comment_below') + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
+        callback(null, json);
+
+        let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
+        attachments[0].actions[1] = {
+          name: 'type_comment',
+          text: t('type_your_comment_below'),
+          type: 'button',
+          style: 'default'
+        };
+        json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
+        
+        const options = {
+          uri: data.response_url,
+          method: 'POST',
+          json: json
+        };
+
+        request(options, function(err, response, body) {
+          console.log('Output from delayed response: ' + body);
+        });
+    
+        console.log('Saved Redis key slack_message_ts:' + data.message_ts);
+      }
+      redis.quit();
+    });
+  });
+}
+
 function process(data, callback) {
   if (data.token === VERIFICATION_TOKEN) {
     
@@ -131,6 +171,12 @@ function process(data, callback) {
       if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
         if (data.actions[0].name === 'change_status') {
           changeStatus(data, json.data, callback);
+        }
+        else if (data.actions[0].name === 'add_comment') {
+          addComment(data, json.data, callback);
+        }
+        else if (data.actions[0].name === 'type_comment') {
+          callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_comment_inside_the_thread_above') });
         }
         else {
           error(data, callback);

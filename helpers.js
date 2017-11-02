@@ -1,5 +1,12 @@
-const t = function(str) {
-  return str.replace(/_/g, ' ').replace(/\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+const config = require('./config.js'),
+      redis = require('redis');
+
+const t = function(str, capitalizeAll) {
+  if (capitalizeAll) {
+    return str.replace(/_/g, ' ').replace(/\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+  }
+  str = str.replace(/_/g, ' ');
+  return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 const formatMessageFromData = function(data) {
@@ -17,7 +24,7 @@ const formatMessageFromData = function(data) {
       statusColor = st.style.color;
       statusLabel = st.label;
     }
-    options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_')), value: st.id });
+    options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_'), true), value: st.id });
   });
 
   return [
@@ -33,17 +40,17 @@ const formatMessageFromData = function(data) {
           short: true
         },
         {
-          title: t('tasks_completed'),
+          title: t('tasks_completed', true),
           value: data.tasks_count.completed + '/' + data.tasks_count.all,
           short: true
         },
         {
-          title: t('added_to_check'),
+          title: t('added_to_check', true),
           value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
           short: true
         },
         {
-          title: t('last_update'),
+          title: t('last_update', true),
           value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
           short: true
         },
@@ -58,29 +65,46 @@ const formatMessageFromData = function(data) {
           short: true
         },
       ],
-      author_name: data.user.name + ' | ' + t(data.author_role),
+      author_name: data.user.name + ' | ' + t(data.author_role, true),
       author_icon: data.user.profile_image,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
-      fallback: t('failed'),
-      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug }),
+      fallback: data.metadata.permalink,
+      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug, id: data.dbid, link: data.metadata.permalink }),
       response_type: 'in_channel',
       replace_original: false,
       delete_original: false,
       actions: [
         {
           name: 'change_status',
-          text: t('change_status'),
+          text: t('change_status', true),
           type: 'select',
           style: 'primary',
           options: options
+        },
+        {
+          name: 'add_comment',
+          text: t('add_comment', true),
+          type: 'button',
+          style: 'primary'
         },
       ]
     }
   ];
 };
 
+const getRedisClient = function() {
+  const client = redis.createClient({ host: config.redisHost });
+
+  client.on('error', function(err) {
+    console.log('Error when connecting to Redis: ' + err);
+  });
+
+  return client;
+};
+
 module.exports = {
   formatMessageFromData,
   t,
+  getRedisClient,
 };
