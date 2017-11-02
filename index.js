@@ -59,6 +59,10 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
         name
         profile_image
       }
+      team {
+        name
+        slug
+      }
       verification_statuses
     }
   }
@@ -73,7 +77,6 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
       console.log('DEBUG: Asked for project media and got response: ' + util.inspect(resp));
       var pm = resp.project_media;
       pm.metadata = JSON.parse(pm.metadata);
-      pm.team = { slug: teamSlug };
       callback(pm);
     }
   })
@@ -160,7 +163,6 @@ function process(event, callback) {
               updateTitle(event, data, json.data.token, callback, function(resp) {
                 const obj = resp.updateProjectMedia.project_media;
                 obj.metadata = JSON.parse(obj.metadata);
-                obj.team = { slug: data.team_slug };
                 
                 let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
 
@@ -290,6 +292,10 @@ function updateTitle(event, data, token, callback, done) {
         user {
           name
           profile_image
+        }
+        team {
+          name
+          slug
         }
         verification_statuses
       }

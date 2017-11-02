@@ -92,6 +92,10 @@ function changeStatus(data, user, callback) {
           name
           profile_image
         }
+        team {
+          name
+          slug
+        }
         verification_statuses
       }
     }
@@ -112,7 +116,6 @@ function changeStatus(data, user, callback) {
     if (!err && resp) {
       const obj = resp.updateStatus.project_media;
       obj.metadata = JSON.parse(obj.metadata);
-      obj.team = { slug: value.team_slug };
       sendReply(obj, data, callback);
     }
     else {

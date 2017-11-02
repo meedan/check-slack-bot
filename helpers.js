@@ -27,45 +27,52 @@ const formatMessageFromData = function(data) {
     options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_'), true), value: st.id });
   });
 
+  fields = [
+    {
+      title: t('notes'),
+      value: data.log_count,
+      short: true
+    },
+    {
+      title: t('tasks_completed', true),
+      value: data.tasks_count.completed + '/' + data.tasks_count.all,
+      short: true
+    },
+    {
+      title: t('added_to_check', true),
+      value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
+      short: true
+    },
+    {
+      title: t('last_update', true),
+      value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
+      short: true
+    },
+    {
+      title: t('project'),
+      value: data.project.title,
+      short: true
+    }
+  ];
+
+  if (tags.length > 0) {
+    fields.push(
+      {
+        title: t('tags'),
+        value: tags.join(', '),
+        short: true
+      }
+    );
+  }
+
   return [
     {
       title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + data.metadata.title,
       title_link: data.metadata.permalink,
       text: data.metadata.description,
       color: statusColor,
-      fields: [
-        {
-          title: t('notes'),
-          value: data.log_count,
-          short: true
-        },
-        {
-          title: t('tasks_completed', true),
-          value: data.tasks_count.completed + '/' + data.tasks_count.all,
-          short: true
-        },
-        {
-          title: t('added_to_check', true),
-          value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
-          short: true
-        },
-        {
-          title: t('last_update', true),
-          value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
-          short: true
-        },
-        {
-          title: t('tags'),
-          value: tags.join(', '),
-          short: true
-        },
-        {
-          title: t('project'),
-          value: data.project.title,
-          short: true
-        },
-      ],
-      author_name: data.user.name + ' | ' + t(data.author_role, true),
+      fields: fields,
+      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' at ' + data.team.name,
       author_icon: data.user.profile_image,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
