@@ -94,6 +94,12 @@ const formatMessageFromData = function(data) {
           type: 'button',
           style: 'primary'
         },
+        {
+          name: 'image_search',
+          text: t('image_search', true),
+          type: 'button',
+          style: 'primary'
+        },
       ]
     }
   ];

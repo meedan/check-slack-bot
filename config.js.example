@@ -11,6 +11,7 @@ const config = {
     verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
     accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',
   },
-  redisHost: 'without protocol or port, only the hostname'
+  redisHost: 'without protocol or port, only the hostname',
+  awsRegion: 'us-east-1'
 };
 module.exports = config;

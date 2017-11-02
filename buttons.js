@@ -4,6 +4,7 @@ const config = require('./config.js'),
       Lokka = require('lokka').Lokka,
       Transport = require('lokka-transport-http').Transport,
       header = require('basic-auth-header'),
+      aws = require('aws-sdk'),
       VERIFICATION_TOKEN = config.slack.verificationToken,
       ACCESS_TOKEN = config.slack.accessToken;
 
@@ -214,7 +215,40 @@ function editTitle(data, user, callback) {
   });
 }
 
-function process(data, callback) {
+function imageSearch(data, callback, context) {
+  const image = data.original_message.attachments[0].image_url;
+
+  if (image) {
+
+    // Invoke Lambda function to get reverse images in background, because Slack doesn't wait more than 3s
+
+    aws.config.loadFromPath('./aws.json');
+    
+    var lambda = new aws.Lambda({
+      region: config.awsRegion
+    });
+    
+    lambda.invoke({
+      FunctionName: 'google-image-search',
+      InvocationType: 'Event',
+      Payload: JSON.stringify({ image_url: image, response_url: data.response_url })
+    }, function(error, resp) {
+      if (error) {
+        console.log('Error from Google Image Search lambda function: ' + util.inspect(error));
+      }
+      if (resp) {
+        console.log('Response from Google Image Search lambda function: ' + util.inspect(resp));
+      }
+    });
+  
+    callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images') });
+  }
+  else {
+    callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('there_are_no_images_on_this_report') });
+  }
+}
+
+function process(data, callback, context) {
   if (data.token === VERIFICATION_TOKEN) {
     
     const url = config.checkApi.url + '/api/admin/user/slack?uid=' + data.user.id;
@@ -235,6 +269,9 @@ function process(data, callback) {
         }
         else if (data.actions[0].name === 'type_title') {
           callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_title_inside_the_thread_above') });
+        }
+        else if (data.actions[0].name === 'image_search') {
+          imageSearch(data, callback, context);
         }
         else {
           error(data, callback);
@@ -257,6 +294,6 @@ exports.handler = (data, context, callback) => {
   const payload = JSON.parse(decodeURIComponent(body).replace(/^payload=/, ''));
   switch (data.type) {
     case 'url_verification': verify(data, callback); break;
-    default: process(payload, callback);
+    default: process(payload, callback, context);
   }
 };
