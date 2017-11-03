@@ -15,7 +15,7 @@ const config = require('./config.js'),
 
 const { t } = require('./helpers.js');
 
-exports.handler = (data, context, callback) => {
+exports.handler = function(data, context, callback) {
   let options = {
     url: 'https://www.google.com/searchbyimage',
     qs: { image_url: data.image_url },

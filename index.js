@@ -2,33 +2,13 @@ const config = require('./config.js'),
       https = require('https'),
       request = require('request'),
       qs = require('querystring'),
-      os = require('os'),
-      Lokka = require('lokka').Lokka,
-      Transport = require('lokka-transport-http').Transport,
       util = require('util'),
-      header = require('basic-auth-header'),
-      VERIFICATION_TOKEN = config.slack.verificationToken,
       ACCESS_TOKEN = config.slack.accessToken;
       
-const { getRedisClient, formatMessageFromData, t } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient } = require('./helpers.js');
 
-var handleErrors = function(errors, data) {
-  console.log('ERROR: ' + util.inspect(errors));
-};
-
-var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
-  var headers = {
-    'X-Check-Token': config.checkApi.apiKey
-  };
-
-  if (config.checkApi.httpAuth) {
-    var credentials = config.checkApi.httpAuth.split(':');
-    var basic = header(credentials[0], credentials[1]);
-    headers['Authorization'] = basic;
-  }
-
-  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + teamSlug, { handleErrors, headers, credentials: false, timeout: 120000 });
-  const client = new Lokka({ transport });
+const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, done) {
+  const client = getGraphqlClient(teamSlug, config.checkApi.apiKey, callback);
 
   const projectMediaQuery = `
   query project_media($ids: String!) {
@@ -71,27 +51,21 @@ var getProjectMedia = function(teamSlug, projectId, projectMediaId, callback) {
   client.query(projectMediaQuery, { ids: projectMediaId + ',' + projectId })
   .then((resp, errors) => {
     if (errors) {
-      console.log('ERROR: ' + util.inspect(errors));
+      console.log('GraphQL query error: ' + util.inspect(errors));
     }
     else {
-      console.log('DEBUG: Asked for project media and got response: ' + util.inspect(resp));
-      var pm = resp.project_media;
+      console.log('GraphQL query response: ' + util.inspect(resp));
+      const pm = resp.project_media;
       pm.metadata = JSON.parse(pm.metadata);
-      callback(pm);
+      done(pm);
     }
   })
-  .catch((e) => {
-    console.log('ERROR: ' + e.toString());
+  .catch(function(e) {
+    console.log('GraphQL query error: ' + e.toString());
   });
 };
 
-function verify(data, callback) {
-  if (data.token === VERIFICATION_TOKEN) callback(null, data.challenge);
-  else callback(t('verification_failed'));   
-}
-
-function process(event, callback) {
-  console.log('Request: ' + util.inspect(event));
+const process = function(event, callback) {
   const mainRegexp = new RegExp(config.checkWeb.url, 'g');
 
   // This message contains a Check URL to be parsed
@@ -101,18 +75,18 @@ function process(event, callback) {
 
     while (matches = regexp.exec(event.text)) {
 
-      var teamSlug = matches[1],
-          projectId = matches[2],
-          projectMediaId = matches[3];
+      const teamSlug = matches[1],
+            projectId = matches[2],
+            projectMediaId = matches[3];
 
-      getProjectMedia(teamSlug, projectId, projectMediaId, function(data) {
-        var message = { 
+      getProjectMedia(teamSlug, projectId, projectMediaId, callback, function(data) {
+        const message = {
           token: ACCESS_TOKEN,
           channel: event.channel,
           attachments: JSON.stringify(formatMessageFromData(data))
         };
 
-        var query = qs.stringify(message);
+        const query = qs.stringify(message);
         https.get('https://slack.com/api/chat.postMessage?' + query);
       });
     }
@@ -121,68 +95,71 @@ function process(event, callback) {
   // This message is a reply to a button action
 
   if (!event.bot_id && event.thread_ts) {
+    
+    // Look for this thread on Redis to see if it's related to any Check media
+
     const redis = getRedisClient();
     redis.get('slack_message_ts:' + event.thread_ts, function(err, reply) {
+      
       if (err) {
         console.log('Error when getting information from Redis: ' + err);
       }
+      
       else if (!reply) {
         console.log('Could not find Redis key slack_message_ts:' + event.thread_ts);
       }
+      
       else {
         const data = JSON.parse(reply.toString());
 
-        // Adding comment
+        // Adding comment or changing title
 
-        if (data.object_type === 'project_media' && data.mode === 'comment') {
-          const url = config.checkApi.url + '/api/admin/user/slack?uid=' + event.user;
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title')) {
 
-          request.get({ url: url, json: true, headers: { 'X-Check-Token': config.checkApi.apiKey } }, function(err, res, json) {
-            if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
-              createComment(event, data, json.data.token, callback, function(resp) {
-                const message = { text: t('your_comment_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                                  response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                const query = qs.stringify(message);
-                https.get('https://slack.com/api/chat.postMessage?' + query);
-              });
-            }
-            else {
+          getCheckSlackUser(event.user,
+            
+            function(err) {
               console.log('Error when trying to identify Slack user: ' + util.inspect(err));
               sendErrorMessage(callback, event.thread_ts, event.channel, data.link);
-            }
-          });
-        }
+            },
+            
+            function(token) {
 
-        // Changing title
+              // Adding comment
 
-        else if (data.object_type === 'project_media' && data.mode === 'edit_title') {
-          const url = config.checkApi.url + '/api/admin/user/slack?uid=' + event.user;
-
-          request.get({ url: url, json: true, headers: { 'X-Check-Token': config.checkApi.apiKey } }, function(err, res, json) {
-            if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
-              updateTitle(event, data, json.data.token, callback, function(resp) {
-                const obj = resp.updateProjectMedia.project_media;
-                obj.metadata = JSON.parse(obj.metadata);
-                
-                let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
-
-                request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' } }, function(err, res, resjson) {
-                  if (err) {
-                    console.log('Error when trying to update Slack message: ' + err);
-                  }
+              if (data.mode === 'comment') {
+                createComment(event, data, token, callback, function(resp) {
+                  const message = { text: t('your_comment_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                                    response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                  const query = qs.stringify(message);
+                  https.get('https://slack.com/api/chat.postMessage?' + query);
                 });
+              }
 
-                message = { text: t('title_was_changed_successfully_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                            response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                query = qs.stringify(message);
-                https.get('https://slack.com/api/chat.postMessage?' + query);
-              });
+              // Changing title
+
+              else if (data.mode === 'edit_title') {
+                updateTitle(event, data, token, callback, function(resp) {
+                  const obj = resp.updateProjectMedia.project_media;
+                  obj.metadata = JSON.parse(obj.metadata);
+                  
+                  let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
+                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
+
+                  request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
+                    if (err) {
+                      console.log('Error when trying to update Slack message: ' + err);
+                    }
+                  });
+
+                  message = { text: t('title_was_changed_successfully_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                              response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                  query = qs.stringify(message);
+                  https.get('https://slack.com/api/chat.postMessage?' + query);
+                });
+              }
             }
-            else {
-              console.log('Error when trying to identify Slack user: ' + util.inspect(err));
-              sendErrorMessage(callback, event.thread_ts, event.channel, data.link);
-            }
-          });
+          );
         }
       }
         
@@ -191,42 +168,18 @@ function process(event, callback) {
   }
 
   callback(null);
-}
+};
 
-function sendErrorMessage(callback, thread, channel, link) {
+const sendErrorMessage = function(callback, thread, channel, link) {
   const message = { text: t('open_Check_to_continue') + ': ' + link, thread_ts: thread, replace_original: false, delete_original: false,
                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: channel };
   const query = qs.stringify(message);
   https.get('https://slack.com/api/chat.postMessage?' + query);
-}
-
-function getClient(team, token, callback) {
-  var handleErrors = function(errors, resp) {
-    console.log('Error on mutation: ' + util.inspect(errors));
-  };
-  
-  const headers = {
-    'X-Check-Token': token
-  };
-
-  if (config.checkApi.httpAuth) {
-    var credentials = config.checkApi.httpAuth.split(':');
-    var basic = header(credentials[0], credentials[1]);
-    headers['Authorization'] = basic;
-  }
-
-  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + team, { handleErrors, headers, credentials: false, timeout: 120000 });
-  const client = new Lokka({ transport });
-
-  return client;
 };
 
-function createComment(event, data, token, callback, done) {
+const createComment = function(event, data, token, callback, done) {
   const pmid = data.object_id.toString(),
-        text = event.text,
-        thread = event.thread_ts,
-        channel = event.channel,
-        team = data.team_slug;
+        text = event.text;
 
   const mutationQuery = `($text: String!, $pmid: String!) {
     createComment: createComment(input: { clientMutationId: "1", text: $text, annotated_id: $pmid, annotated_type: "ProjectMedia" }) {
@@ -236,34 +189,13 @@ function createComment(event, data, token, callback, done) {
     }
   }`;
   
-  const vars = {
-    text: text,
-    pmid: pmid
-  };
-
-  const client = getClient(team, token, callback);
-
-  client.mutate(mutationQuery, vars).then(function(resp, err) {
-    if (!err && resp) {
-      done(resp);
-    }
-    else {
-      console.log('Error when creating comment: ' + util.inspect(err));
-      sendErrorMessage(callback, thread, channel, data.link);
-    }
-  }).catch(function(e) {
-    console.log('Error when creating comment: ' + util.inspect(e));
-    sendErrorMessage(callback, thread, channel, data.link);
-  });
+  executeMutation(mutationQuery, { text: text, pmid: pmid }, sendErrorMessage, done, token, callback, event, data);
 }
 
-function updateTitle(event, data, token, callback, done) {
+const updateTitle = function(event, data, token, callback, done) {
   const id = data.graphql_id,
-        text = event.text,
-        thread = event.thread_ts,
-        channel = event.channel,
-        team = data.team_slug;
-
+        text = event.text;
+  
   const mutationQuery = `($embed: String!, $id: ID!) {
     updateProjectMedia: updateProjectMedia(input: { clientMutationId: "1", embed: $embed, id: $id }) {
       project_media {
@@ -307,26 +239,18 @@ function updateTitle(event, data, token, callback, done) {
     id: id
   };
 
-  const client = getClient(team, token, callback);
-
-  client.mutate(mutationQuery, vars).then(function(resp, err) {
-    if (!err && resp) {
-      done(resp);
-    }
-    else {
-      console.log('Error when editing title: ' + util.inspect(err));
-      sendErrorMessage(callback, thread, channel, data.link);
-    }
-  }).catch(function(e) {
-    console.log('Error when editing title: ' + util.inspect(e));
-    sendErrorMessage(callback, thread, channel, data.link);
-  });
+  executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 }
 
-exports.handler = (data, context, callback) => {
+exports.handler = function(data, context, callback) {
   switch (data.type) {
-    case 'url_verification': verify(data, callback); break;
-    case 'event_callback': process(data.event, callback); break;
-    default: callback(null);
+    case 'url_verification':
+      verify(data, callback);
+      break;
+    case 'event_callback':
+      process(data.event, callback);
+      break;
+    default:
+      callback(null);
   }
 };

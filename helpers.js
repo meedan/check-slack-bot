@@ -1,5 +1,13 @@
 const config = require('./config.js'),
-      redis = require('redis');
+      Lokka = require('lokka').Lokka,
+      Transport = require('lokka-transport-http').Transport,
+      header = require('basic-auth-header'),
+      request = require('request'),
+      util = require('util'),
+      redis = require('redis'),
+      VERIFICATION_TOKEN = config.slack.verificationToken;
+
+// This should be converted to a localization function later on... currently only turns identifiers into readable strings
 
 const t = function(str, capitalizeAll) {
   if (capitalizeAll) {
@@ -9,16 +17,24 @@ const t = function(str, capitalizeAll) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
+// Generate a Slack message JSON from a Check media object
+
 const formatMessageFromData = function(data) {
-  var tags = [];
+
+  // Build a list of tags
+
+  let tags = [];
   data.tags.edges.forEach(function(tag) {
     tags.push(tag.node.tag);
   });
 
-  var statusColor = '#ccc';
-  var statusLabel = data.last_status;
-  var statuses = JSON.parse(data.verification_statuses);
-  var options = [];
+  // Build a list of verification statuses (core or custom) to be selected
+  // Get the current status (label and color)
+
+  let statusColor = '#cccccc';
+  let statusLabel = data.last_status;
+  const statuses = JSON.parse(data.verification_statuses);
+  let options = [];
   statuses.statuses.forEach(function(st) {
     if (st.id === data.last_status) {
       statusColor = st.style.color;
@@ -26,6 +42,8 @@ const formatMessageFromData = function(data) {
     }
     options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_'), true), value: st.id });
   });
+
+  // Formats the fields to be displayed on the Slack card
 
   fields = [
     {
@@ -72,7 +90,7 @@ const formatMessageFromData = function(data) {
       text: data.metadata.description,
       color: statusColor,
       fields: fields,
-      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' at ' + data.team.name,
+      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' @ ' + data.team.name,
       author_icon: data.user.profile_image,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
@@ -106,7 +124,7 @@ const formatMessageFromData = function(data) {
           text: t('image_search', true),
           type: 'button',
           style: 'primary'
-        },
+        }
       ]
     }
   ];
@@ -122,8 +140,78 @@ const getRedisClient = function() {
   return client;
 };
 
+const getGraphqlClient = function(team, token, callback) {
+  const handleErrors = function(errors, resp) {
+    console.log('Error on GraphQL call: ' + util.inspect(errors));
+  };
+  
+  const headers = {
+    'X-Check-Token': token
+  };
+
+  if (config.checkApi.httpAuth) {
+    const credentials = config.checkApi.httpAuth.split(':');
+    const basic = header(credentials[0], credentials[1]);
+    headers['Authorization'] = basic;
+  }
+
+  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + team, { handleErrors, headers, credentials: false, timeout: 120000 });
+  const client = new Lokka({ transport });
+
+  return client;
+};
+
+const getCheckSlackUser = function(uid, fail, done) {
+  const url = config.checkApi.url + '/api/admin/user/slack?uid=' + uid;
+
+  request.get({ url: url, json: true, headers: { 'X-Check-Token': config.checkApi.apiKey } }, function(err, res, json) {
+    if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
+      done(json.data.token);
+    }
+    else {
+      fail(err);
+    }
+  });
+};
+
+const verify = function(data, callback) {
+  if (data.token === VERIFICATION_TOKEN) {
+    callback(null, data.challenge);
+  }
+  else {
+    callback(t('verification_failed'));
+  }
+};
+
+const executeMutation = function(mutationQuery, vars, fail, done, token, callback, event, data) {
+  const thread = event.thread_ts,
+        channel = event.channel,
+        team = data.team_slug;
+
+  const client = getGraphqlClient(team, token, callback);
+
+  client.mutate(mutationQuery, vars)
+  .then(function(resp, err) {
+    if (!err && resp) {
+      done(resp);
+    }
+    else {
+      console.log('Error when executing mutation: ' + util.inspect(err));
+      fail(callback, thread, channel, data.link);
+    }
+  })
+  .catch(function(e) {
+    console.log('Error when executing mutation: ' + util.inspect(e));
+    fail(callback, thread, channel, data.link);
+  });
+};
+
 module.exports = {
-  formatMessageFromData,
   t,
+  formatMessageFromData,
   getRedisClient,
+  getGraphqlClient,
+  getCheckSlackUser,
+  verify,
+  executeMutation
 };
