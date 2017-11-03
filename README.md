@@ -6,7 +6,7 @@ This is a Slack bot for Check. It should reply to message that contain one or mo
 
 The diagram below shows the proposed architecture for this bot (a serverless structure on AWS), where each component is numbered with a white circle. The yellow circles show how it works. More details on the sections below.
 
-![Diagram](docs/diagram.png?raw=true "Diagram")
+![Diagram](diagram.png?raw=true "Diagram")
 
 ## Installation on AWS
 
