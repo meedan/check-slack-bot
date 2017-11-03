@@ -1,10 +1,10 @@
 # Check Slack Bot
 
-This is a Slack bot for Check. It should reply to message that contain one or more Check URLs and display a preview of it as a Slack message, with interaction buttons.
+This is a Slack bot for Check. It should reply to messages that contain one or more Check URLs and display a preview of it as a Slack message, with interaction buttons.
 
 ## Diagram
 
-The diagram below shows the proposed architecture for this bot (a serverless structure on AWS), where each component is numbered with a white circle. The yellow circles show how it works. More details on the sections below.
+The diagram below shows the architecture for this bot (a serverless structure on AWS), where each component is numbered with a white circle. The yellow circles show how it works. More details on the sections below.
 
 ![Diagram](diagram.png?raw=true "Diagram")
 
@@ -12,12 +12,12 @@ The diagram below shows the proposed architecture for this bot (a serverless str
 
 The steps below reference the **white** circles on the diagram above.
 
-* On AWS side, we need to create a VPC that allows our Lambda functions to connect to a Redis instance running privately on AWS but that should be also able to connect to Check, which is running outside AWS. AWS only allows you to assign Lambda functions to at least two subnets on a VPC and those subnets can't be connected to the internet directly, they need to be connected to a NAT. So, in order to attend all those requirements, we suggest the VPC setup numbered **[0]** on the diagram above: a network `10.0.0.0/16` with four subnets: a public one, labelled `A`, with range `10.0.0.0/18`, whichis connected directly to an Internet Gateway; and three private subnets, labelled `B`, `C` and `D`, with ranges `10.0.64.0/18`, `10.0.128.0/18` and `10.0.192.0/18`. Those three private subnets should be connected to a `NAT` located at the private subnet `A`.
+* On AWS side, we need to create a VPC that allows our Lambda functions to connect to a Redis instance running privately on AWS but that should be also able to connect to Check, which is running outside AWS. AWS only allows you to assign Lambda functions to at least two subnets on a VPC and those subnets can't be connected to the internet directly, they need to be connected to a NAT. So, in order to attend all those requirements, we suggest the VPC setup numbered **[0]** on the diagram above: a network `10.0.0.0/16` with four subnets: a public one, labelled `A`, with range `10.0.0.0/18`, which is connected directly to an Internet Gateway; and three private subnets, labelled `B`, `C` and `D`, with ranges `10.0.64.0/18`, `10.0.128.0/18` and `10.0.192.0/18`. Those three private subnets should be connected to a `NAT` located at the private subnet `A`.
 * Spin up a Redis instance running on AWS Elasticache **[1]**. This instance should use only the private subnets `B`, `C` and `D`. Copy the host to `config.js`.
 * Back to your computer, copy `config.js.example` to `config.js` and define your configurations
 * Copy `aws.json.example` to `aws.json` and add your AWS credentials
 * Install the dependencies with `npm i` and generate a ZIP package with `npm run build`
-* The same `package.zip` file that was generated should be uploaded to three lambda functions **[2]**. The following sections explain how those three sections should be created.
+* The same `package.zip` file that was generated should be uploaded to three lambda functions **[2]**. The following sections explain how those three functions should be created.
 * Create a Lambda function called `check-slack-bot`, whose handler is `index.handler`. It should use subnets `B`, `C` and `D`. **[3]**
 * Add a trigger to this Lambda function, of type "API Gateway". The API should have a single endpoint, that accepts only `POST` requests. Remember to deploy your API once done. **[4]**
 * Create a Lambda function called `check-slack-bot-buttons`, whose handler is `buttons.handler`. It should use subnets `B`, `C` and `D`. **[5]**
@@ -44,4 +44,4 @@ The steps below reference the **yellow** circles on the diagram above.
   * If it's a "add comment" or "edit title" action, the function will save on Redis that action and the relation between that Slack message and the media **[4]**, and reply on Slack in a new thread **[5]**
     * When the user adds a message under that thread that was created by the bot, this message is going to be sent by Slack **[0]** to the `check-slack-bot` function which is going to verify on Redis **[6]** if that thread is related to any Check media. If so, it's going to first verify if that Slack user is related to any Check user. It does so by making an API call to Check **[1]** asking for the Check token of a user with that Slack UID. If there is such user, the bot uses that token to send a mutation to Check API **[1]** to add a new comment or edit the title. After the mutation completes, the bot sends a new message on the same thread to tell that the operation was done and also updates the existing message on Slack with the new title **[2]**.
   * If it's a "change status" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot uses that token to send a mutation to Check API **[7]** to change the status of that media. After the mutation completes, the existing Slack message is updated with the new status **[5]**.
-  * If it's a "image search" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot replies immediately to Slack (because Slack only waits until 3s for an interactive button response) and, at same time, makes an asynchronous request to the `google-image-search` function, using AWS SDK **[8]**. That function will look for similar images on Google an send a message to Slack with the results **[9]**.
+  * If it's a "image search" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot replies immediately to Slack **[5]** (because Slack only waits until 3s for an interactive button response) and, at same time, makes an asynchronous request to the `google-image-search` function, using AWS SDK **[8]**. That function will look for similar images on Google an send a message to Slack with the results **[9]**.
