@@ -16,7 +16,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm i && rm package.zip && zip -r package.zip * && echo \"----------\" && echo \"Now upload package.zip to AWS Lambda\""
+    "build": "npm i && rm -f package.zip && zip -r package.zip * && echo \"----------\" && echo \"Now upload package.zip to AWS Lambda\""
   },
   "author": "Meedan",
   "license": "MIT"
