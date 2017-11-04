@@ -2,6 +2,8 @@
 
 This is a Slack bot for Check. It should reply to messages that contain one or more Check URLs and display a preview of it as a Slack message, with interaction buttons.
 
+[This video](https://www.youtube.com/watch?v=3v6asqguGIc) shows how it works.
+
 ## Diagram
 
 The diagram below shows the architecture for this bot (a serverless structure on AWS), where each component is numbered with a white circle. The yellow circles show how it works. More details on the sections below.
