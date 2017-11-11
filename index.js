@@ -152,7 +152,7 @@ const process = function(event, callback) {
                     }
                   });
 
-                  message = { text: t('title_was_changed_successfully_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  message = { text: t('title_was_changed_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                               response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);

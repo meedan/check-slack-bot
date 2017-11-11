@@ -113,7 +113,7 @@ const addComment = function(data, token, callback) {
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'type_comment',
-    text: t('type_your_comment_below'),
+    text: t('type_your_comment_in_the_thread_below'),
     type: 'button',
     style: 'default'
   };
@@ -163,7 +163,7 @@ const imageSearch = function(data, callback, context) {
     lambda.invoke({
       FunctionName: 'google-image-search',
       InvocationType: 'Event',
-      Payload: JSON.stringify({ image_url: image, response_url: data.response_url })
+      Payload: JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel })
     }, function(error, resp) {
       if (error) {
         console.log('Error from Google Image Search lambda function: ' + util.inspect(error));
@@ -173,7 +173,7 @@ const imageSearch = function(data, callback, context) {
       }
     });
   
-    callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images') });
+    callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images_-_I_will_post_a_reply_inside_a_thread_above') });
   }
   else {
     callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('there_are_no_images_on_this_report') });

@@ -10,6 +10,8 @@
 const config = require('./config.js'),
       request = require('request'),
       util = require('util'),
+      qs = require('querystring'),
+      https = require('https'),
       cheerio = require('cheerio'),
       ACCESS_TOKEN = config.slack.accessToken;
 
@@ -26,7 +28,7 @@ exports.handler = function(data, context, callback) {
     json = {};
   
     if (err) {
-      json = { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('something_went_wrong') };
+      json = { response_type: 'ephemeral', text: t('something_went_wrong_when_looking_for_similar_images') };
     }
     else {
       const $ = cheerio.load(body);
@@ -36,9 +38,7 @@ exports.handler = function(data, context, callback) {
         const link = 'https://www.google.com/searchbyimage?site=search&sa=X&image_url=' + data.image_url;
         json = {
           response_type: 'in_channel',
-          replace_original: false,
-          delete_original: false,
-          attachments: [
+          attachments: JSON.stringify([
             {
               title: t('image_search_results'),
               title_link: link,
@@ -47,26 +47,23 @@ exports.handler = function(data, context, callback) {
               text: t('this_seems_to_be') + ' *' + name + '*. ' + t('i_found_this_similar_image_on_the_side') + '. <' + link + '|' + t('more_on_Google') + '>.',
               thumb_url: result
             }
-          ]
+          ])
         };
       }
       else {
-        json = { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('no_results_found_now-_try_again_later') };
+        json = { response_type: 'ephemeral', text: t('no_image_search_results_found_now_-_please_try_again_later') };
       }
     }
   
     json.token = ACCESS_TOKEN;
+    json.replace_original = false;
+    json.delete_original = false;
+    json.thread_ts = data.thread_ts;
+    json.channel = data.channel.id;
 
-    options = {
-      uri: data.response_url,
-      method: 'POST',
-      json: json
-    };
+    const query = qs.stringify(json);
+    https.get('https://slack.com/api/chat.postMessage?' + query);
   
-    request(options, function(err, res, body) {
-      console.log('Output from delayed response: ' + body);
-    });
-    
     callback(null);
   });
 };

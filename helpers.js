@@ -45,7 +45,7 @@ const formatMessageFromData = function(data) {
 
   // Formats the fields to be displayed on the Slack card
 
-  fields = [
+  let fields = [
     {
       title: t('notes'),
       value: data.log_count,
@@ -83,6 +83,37 @@ const formatMessageFromData = function(data) {
     );
   }
 
+  let actions = [
+    {
+      name: 'change_status',
+      text: t('change_status', true),
+      type: 'select',
+      style: 'primary',
+      options: options
+    },
+    {
+      name: 'add_comment',
+      text: t('add_comment', true),
+      type: 'button',
+      style: 'primary'
+    },
+    {
+      name: 'edit_title',
+      text: t('edit_title', true),
+      type: 'button',
+      style: 'primary'
+    }
+  ];
+
+  if (data.metadata.picture && /^http/.test(data.metadata.picture)) {
+    actions.push({
+      name: 'image_search',
+      text: t('image_search', true),
+      type: 'button',
+      style: 'primary'
+    });
+  }
+
   return [
     {
       title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + data.metadata.title,
@@ -90,7 +121,7 @@ const formatMessageFromData = function(data) {
       text: data.metadata.description,
       color: statusColor,
       fields: fields,
-      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' @ ' + data.team.name,
+      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name,
       author_icon: data.user.profile_image,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
@@ -99,33 +130,7 @@ const formatMessageFromData = function(data) {
       response_type: 'in_channel',
       replace_original: false,
       delete_original: false,
-      actions: [
-        {
-          name: 'change_status',
-          text: t('change_status', true),
-          type: 'select',
-          style: 'primary',
-          options: options
-        },
-        {
-          name: 'add_comment',
-          text: t('add_comment', true),
-          type: 'button',
-          style: 'primary'
-        },
-        {
-          name: 'edit_title',
-          text: t('edit_title', true),
-          type: 'button',
-          style: 'primary'
-        },
-        {
-          name: 'image_search',
-          text: t('image_search', true),
-          type: 'button',
-          style: 'primary'
-        }
-      ]
+      actions: actions 
     }
   ];
 };
