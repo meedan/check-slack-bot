@@ -205,7 +205,7 @@ const createComment = function(event, data, token, callback, done) {
 const storeSlackMessage = function(event, callback) {
   const json = JSON.parse(event.attachments[0].callback_id);
 
-  const vars = { set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_attachments: JSON.stringify(event.attachments) }), annotated_id: `${json.id}` };
+  const vars = { set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments) }), annotated_id: `${json.id}` };
 
   const mutationQuery = `($set_fields: String!, $annotated_id: String!) {
     createDynamic: createDynamic(input: { clientMutationId: "1", set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
