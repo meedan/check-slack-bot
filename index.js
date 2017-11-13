@@ -67,12 +67,11 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 
 const process = function(event, callback) {
   const mainRegexp = new RegExp(config.checkWeb.url, 'g');
+  const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
 
   // This message contains a Check URL to be parsed
 
   if (!event.bot_id && mainRegexp.test(event.text)) {
-    const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
-
     while (matches = regexp.exec(event.text)) {
 
       const teamSlug = matches[1],
@@ -89,6 +88,17 @@ const process = function(event, callback) {
         const query = qs.stringify(message);
         https.get('https://slack.com/api/chat.postMessage?' + query);
       });
+    }
+  }
+
+  // This message is a Check report parsed by the bot
+  
+  if (event.bot_id && event.text === '' && event.attachments && event.attachments.length > 0 && regexp.test(event.attachments[0].fallback)) {
+    try {
+      storeSlackMessage(event, callback);
+    }
+    catch (e) {
+      // Ignore
     }
   }
 
@@ -190,6 +200,24 @@ const createComment = function(event, data, token, callback, done) {
   }`;
   
   executeMutation(mutationQuery, { text: text, pmid: pmid }, sendErrorMessage, done, token, callback, event, data);
+}
+
+const storeSlackMessage = function(event, callback) {
+  const json = JSON.parse(event.attachments[0].callback_id);
+
+  const vars = { set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_attachments: JSON.stringify(event.attachments) }), annotated_id: `${json.id}` };
+
+  const mutationQuery = `($set_fields: String!, $annotated_id: String!) {
+    createDynamic: createDynamic(input: { clientMutationId: "1", set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
+      project_media {
+        dbid
+      }
+    }
+  }`;
+
+  const ignore = function() { /* Do nothing */ };
+  
+  executeMutation(mutationQuery, vars, ignore, ignore, config.checkApi.apiKey, callback, event, { team_slug: json.team_slug });
 }
 
 const updateTitle = function(event, data, token, callback, done) {

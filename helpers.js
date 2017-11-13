@@ -18,6 +18,7 @@ const t = function(str, capitalizeAll) {
 };
 
 // Generate a Slack message JSON from a Check media object
+// ATTENTION: If you change this structure here, please make sure that Check API is updated too, since Check API updates Slack messages
 
 const formatMessageFromData = function(data) {
 

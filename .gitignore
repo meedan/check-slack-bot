@@ -7,3 +7,5 @@ node_modules
 .*.swp
 package.zip
 aws.json
+.swp
+.swo
