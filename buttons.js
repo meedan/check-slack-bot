@@ -24,7 +24,7 @@ const changeStatus = function(data, token, callback) {
   };
 
   const mutationQuery = `($status: String!, $id: ID!) {
-    updateStatus: updateStatus(input: { clientMutationId: "1", id: $id, status: $status }) {
+    updateStatus: updateStatus(input: { clientMutationId: "from_slack", id: $id, status: $status }) {
       project_media {
         id
         dbid

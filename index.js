@@ -192,7 +192,7 @@ const createComment = function(event, data, token, callback, done) {
         text = event.text;
 
   const mutationQuery = `($text: String!, $pmid: String!) {
-    createComment: createComment(input: { clientMutationId: "1", text: $text, annotated_id: $pmid, annotated_type: "ProjectMedia" }) {
+    createComment: createComment(input: { clientMutationId: "from_slack", text: $text, annotated_id: $pmid, annotated_type: "ProjectMedia" }) {
       project_media {
         dbid
       }
@@ -208,7 +208,7 @@ const storeSlackMessage = function(event, callback) {
   const vars = { set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments) }), annotated_id: `${json.id}` };
 
   const mutationQuery = `($set_fields: String!, $annotated_id: String!) {
-    createDynamic: createDynamic(input: { clientMutationId: "1", set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
+    createDynamic: createDynamic(input: { clientMutationId: "from_slack", set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
       project_media {
         dbid
       }
@@ -225,7 +225,7 @@ const updateTitle = function(event, data, token, callback, done) {
         text = event.text;
   
   const mutationQuery = `($embed: String!, $id: ID!) {
-    updateProjectMedia: updateProjectMedia(input: { clientMutationId: "1", embed: $embed, id: $id }) {
+    updateProjectMedia: updateProjectMedia(input: { clientMutationId: "from_slack", embed: $embed, id: $id }) {
       project_media {
         id
         dbid
