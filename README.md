@@ -2,7 +2,7 @@
 
 This is a Slack bot for Check. It should reply to messages that contain one or more Check URLs and display a preview of it as a Slack message, with interaction buttons.
 
-[This video](https://www.youtube.com/watch?v=3v6asqguGIc) shows how it works.
+[These](https://www.youtube.com/watch?v=3v6asqguGIc) [videos](https://www.youtube.com/watch?v=0foyYpTZrV4) show how it works.
 
 ## Diagram
 
@@ -28,7 +28,7 @@ The steps below reference the **white** circles on the diagram above.
 * Now on the Slack app side **[8]**, you need to do a few things:
   * On "Basic Information", copy the verification token to `config.js`, as `slack.verificationToken`
   * On "Interactive Components", put in the "Request URL" field the HTTP path to your `check-slack-bot-buttons` function
-  * On "OAuth & Permissions", copy the "OAuth Access Token" to `config.js`, as `slack.accessToken` and add the following scopes: `channels.history`, `chat:write:bot` and `chat:write:user`
+  * On "OAuth & Permissions", copy the "OAuth Access Token" to `config.js` as `slack.accessToken` and to Check API's `config.yml` as `slack_token`, and add the following scopes: `channels.history`, `chat:write:bot` and `chat:write:user`
   * On "Event Subscriptions", enable events, put in the "Request URL" field the HTTP path to your `check-slack-bot` function and subscribe to the workspace event `message.channels`
   * On "Bot Users", add a new bot called Check
 * Finally, at the Check side **[9]**, create a new global API key and add to `config.js` as `checkApi.apiKey`.
@@ -42,8 +42,10 @@ The steps below reference the **yellow** circles on the diagram above.
 * **[0]** The Check Slack Bot relies on Slack's Events API. So, when a new message is posted on a public channel, Slack makes a request to the `check-slack-bot` lambda function. If the message contains one or more Check media URLs, it will be parsed.
 * **[1]** The lambda function makes a GraphQL request to Check API using the global token, asking for information about that media
 * **[2]** The lambda function returns to Slack a formatted message with information about that media and also interaction buttons
+  * That message that is created by the bot is also sent back to the bot (as any other message) **[0]**, which is going to send a mutation to Check **[1]** in order to create a `slack_message` annotation for that report. This annotation contains the Slack message id, this way Check is able to update that message and thread when actions happen on Check side.
 * **[3]** When an interactive button is clicked, the action is sent to lambda function `check-slack-bot-buttons`. Today there are four possible actions:
   * If it's a "add comment" or "edit title" action, the function will save on Redis that action and the relation between that Slack message and the media **[4]**, and reply on Slack in a new thread **[5]**
     * When the user adds a message under that thread that was created by the bot, this message is going to be sent by Slack **[0]** to the `check-slack-bot` function which is going to verify on Redis **[6]** if that thread is related to any Check media. If so, it's going to first verify if that Slack user is related to any Check user. It does so by making an API call to Check **[1]** asking for the Check token of a user with that Slack UID. If there is such user, the bot uses that token to send a mutation to Check API **[1]** to add a new comment or edit the title. After the mutation completes, the bot sends a new message on the same thread to tell that the operation was done and also updates the existing message on Slack with the new title **[2]**.
   * If it's a "change status" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot uses that token to send a mutation to Check API **[7]** to change the status of that media. After the mutation completes, the existing Slack message is updated with the new status **[5]**.
   * If it's a "image search" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot replies immediately to Slack **[5]** (because Slack only waits until 3s for an interactive button response) and, at same time, makes an asynchronous request to the `google-image-search` function, using AWS SDK **[8]**. That function will look for similar images on Google an send a message to Slack with the results **[9]**.
+* **[10]** When a comment is created from Check UI or when a report status is changed from Check UI, Check sends a request to Slack in order to add a new message to a thread or to update an existing Slack message, respectively. This is done _only_ if the report on Check has at least one `slack_message` annotation, which connects a Check report to a Slack message id.
