@@ -115,6 +115,11 @@ const formatMessageFromData = function(data) {
     });
   }
 
+  let author_icon = data.user.profile_image;
+  if (data.user.source && data.user.source.image) {
+    author_icon = data.user.source.image;
+  }
+
   return [
     {
       title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + data.metadata.title,
@@ -123,7 +128,7 @@ const formatMessageFromData = function(data) {
       color: statusColor,
       fields: fields,
       author_name: data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name,
-      author_icon: data.user.profile_image,
+      author_icon: author_icon,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
       fallback: data.metadata.permalink,

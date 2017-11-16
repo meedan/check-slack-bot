@@ -38,6 +38,9 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       user {
         name
         profile_image
+        source {
+          image
+        }
       }
       team {
         name
@@ -252,6 +255,9 @@ const updateTitle = function(event, data, token, callback, done) {
         user {
           name
           profile_image
+          source {
+            image
+          }
         }
         team {
           name

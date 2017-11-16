@@ -51,6 +51,9 @@ const changeStatus = function(data, token, callback) {
         user {
           name
           profile_image
+          source {
+            image
+          }
         }
         team {
           name
