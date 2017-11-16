@@ -20,11 +20,12 @@ const changeStatus = function(data, token, callback) {
   
   const vars = {
     id: value.last_status_id,
-    status: data.actions[0].selected_options[0].value
+    status: data.actions[0].selected_options[0].value,
+    clientMutationId: `fromSlackMessage:${data.message_ts}`
   };
 
-  const mutationQuery = `($status: String!, $id: ID!) {
-    updateStatus: updateStatus(input: { clientMutationId: "from_slack", id: $id, status: $status }) {
+  const mutationQuery = `($status: String!, $id: ID!, $clientMutationId: String!) {
+    updateStatus: updateStatus(input: { clientMutationId: $clientMutationId, id: $id, status: $status }) {
       project_media {
         id
         dbid

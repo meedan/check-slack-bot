@@ -194,24 +194,28 @@ const createComment = function(event, data, token, callback, done) {
   const pmid = data.object_id.toString(),
         text = event.text;
 
-  const mutationQuery = `($text: String!, $pmid: String!) {
-    createComment: createComment(input: { clientMutationId: "from_slack", text: $text, annotated_id: $pmid, annotated_type: "ProjectMedia" }) {
+  const mutationQuery = `($text: String!, $pmid: String!, $clientMutationId: String!) {
+    createComment: createComment(input: { clientMutationId: $clientMutationId, text: $text, annotated_id: $pmid, annotated_type: "ProjectMedia" }) {
       project_media {
         dbid
       }
     }
   }`;
   
-  executeMutation(mutationQuery, { text: text, pmid: pmid }, sendErrorMessage, done, token, callback, event, data);
+  executeMutation(mutationQuery, { text: text, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
 }
 
 const storeSlackMessage = function(event, callback) {
   const json = JSON.parse(event.attachments[0].callback_id);
 
-  const vars = { set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments) }), annotated_id: `${json.id}` };
+  const vars = {
+    set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments) }),
+    annotated_id: `${json.id}`,
+    clientMutationId: `fromSlackMessage:${event.ts}`
+  };
 
-  const mutationQuery = `($set_fields: String!, $annotated_id: String!) {
-    createDynamic: createDynamic(input: { clientMutationId: "from_slack", set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
+  const mutationQuery = `($set_fields: String!, $annotated_id: String!, $clientMutationId: String!) {
+    createDynamic: createDynamic(input: { clientMutationId: $clientMutationId, set_fields: $set_fields, annotated_id: $annotated_id, annotated_type: "ProjectMedia", annotation_type: "slack_message" }) {
       project_media {
         dbid
       }
@@ -227,8 +231,8 @@ const updateTitle = function(event, data, token, callback, done) {
   const id = data.graphql_id,
         text = event.text;
   
-  const mutationQuery = `($embed: String!, $id: ID!) {
-    updateProjectMedia: updateProjectMedia(input: { clientMutationId: "from_slack", embed: $embed, id: $id }) {
+  const mutationQuery = `($embed: String!, $id: ID!, $clientMutationId: String!) {
+    updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, embed: $embed, id: $id }) {
       project_media {
         id
         dbid
@@ -270,7 +274,8 @@ const updateTitle = function(event, data, token, callback, done) {
   
   const vars = {
     embed: JSON.stringify({ title: text }),
-    id: id
+    id: id,
+    clientMutationId: `fromSlackMessage:${event.ts}`
   };
 
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
