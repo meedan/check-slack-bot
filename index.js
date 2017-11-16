@@ -275,7 +275,7 @@ const updateTitle = function(event, data, token, callback, done) {
   const vars = {
     embed: JSON.stringify({ title: text }),
     id: id,
-    clientMutationId: `fromSlackMessage:${event.ts}`
+    clientMutationId: `fromSlackMessage:${event.thread_ts}`
   };
 
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
