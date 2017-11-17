@@ -120,11 +120,21 @@ const formatMessageFromData = function(data) {
     author_icon = data.user.source.image;
   }
 
+  let title = data.metadata.title;
+  if (title.length > 140) {
+    title = title.substring(0, 137) + '...';
+  }
+
+  let description = data.metadata.description;
+  if (description.length > 500) {
+    description = description.substring(0, 497) + '...';
+  }
+
   return [
     {
-      title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + data.metadata.title,
+      title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + title,
       title_link: data.metadata.permalink,
-      text: data.metadata.description,
+      text: description,
       color: statusColor,
       fields: fields,
       author_name: data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name,

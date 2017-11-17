@@ -89,7 +89,11 @@ const process = function(event, callback) {
         };
 
         const query = qs.stringify(message);
-        https.get('https://slack.com/api/chat.postMessage?' + query);
+        https.get('https://slack.com/api/chat.postMessage?' + query, (res) => {
+          console.log('Slack response status code: ' + res.statusCode);
+        }).on('error', (e) => {
+          console.log('Slack error: ' + util.inspect(e));
+        });
       });
     }
   }
