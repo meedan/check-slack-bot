@@ -112,7 +112,7 @@ const process = function(event, callback) {
     // Look for this thread on Redis to see if it's related to any Check media
 
     const redis = getRedisClient();
-    redis.get('slack_message_ts:' + event.thread_ts, function(err, reply) {
+    redis.get('slack_message_ts:' + config.redisPrefix + ':' + event.thread_ts, function(err, reply) {
       
       if (err) {
         console.log('Error when getting information from Redis: ' + err);

@@ -83,7 +83,7 @@ const saveToRedisAndReplyToSlack = function(data, token, callback, mode, newMess
   const redis = getRedisClient();
   
   redis.on('connect', function() {
-    redis.set('slack_message_ts:' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function(e) {
+    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function(e) {
       if (e) {
         console.log('Redis error: ' + e);
         error(data, callback);
