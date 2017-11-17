@@ -12,6 +12,7 @@ const config = {
     accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',
   },
   redisHost: 'without protocol or port, only the hostname',
-  awsRegion: 'us-east-1'
+  awsRegion: 'us-east-1',
+  googleImageSearchFunctionName: 'if not provided, defaults to "google-image-search"'
 };
 module.exports = config;

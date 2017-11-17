@@ -165,7 +165,7 @@ const imageSearch = function(data, callback, context) {
     });
     
     lambda.invoke({
-      FunctionName: 'google-image-search',
+      FunctionName: config.googleImageSearchFunctionName || 'google-image-search',
       InvocationType: 'Event',
       Payload: JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel })
     }, function(error, resp) {
