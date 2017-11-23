@@ -8,11 +8,11 @@ const config = require('./config.js'),
 const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient } = require('./helpers.js');
 
 const sendErrorMessage = function(callback, thread, channel, link) {
-  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('open_Check_to_continue') + ': ' + link });
+  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ': ' + link });
 };
 
 const error = function(data, callback) {
-  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('open_Check_to_continue') + ': ' + data.original_message.attachments[0].title_link });
+  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ': ' + data.original_message.attachments[0].title_link });
 };
 
 const changeStatus = function(data, token, callback) {

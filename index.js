@@ -188,7 +188,7 @@ const process = function(event, callback) {
 };
 
 const sendErrorMessage = function(callback, thread, channel, link) {
-  const message = { text: t('open_Check_to_continue') + ': ' + link, thread_ts: thread, replace_original: false, delete_original: false,
+  const message = { text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ' ' + link, thread_ts: thread, replace_original: false, delete_original: false,
                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: channel };
   const query = qs.stringify(message);
   https.get('https://slack.com/api/chat.postMessage?' + query);
