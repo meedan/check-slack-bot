@@ -122,9 +122,13 @@ const addComment = function(data, token, callback) {
     style: 'default'
   };
   attachments[0].actions[2] = {
-    name: 'edit_title',
-    text: t('edit_title', true),
-    type: 'button',
+    name: 'edit',
+    text: t('edit', true),
+    type: 'select',
+    options: [
+      { text: t('title'), value: 'title' },
+      { text: t('description'), value: 'description' }
+    ],
     style: 'primary'
   };
 
@@ -142,13 +146,47 @@ const editTitle = function(data, token, callback) {
     style: 'primary'
   };
   attachments[0].actions[2] = {
-    name: 'type_title',
-    text: t('type_title_below'),
-    type: 'button',
-    style: 'default'
+    name: 'edit',
+    text: t('edit', true),
+    type: 'select',
+    options: [
+      { text: t('type_title_below'), value: 'type_title' },
+      { text: t('description'), value: 'description' }
+    ],
+    selected_options: [
+      { text: t('type_title_below'), value: 'type_title' },
+    ],
+    style: 'primary'
   };
   
   saveToRedisAndReplyToSlack(data, token, callback, 'edit_title', newMessage, attachments);
+};
+
+const editDescription = function(data, token, callback) {
+  const newMessage = t('type_the_description_below');
+
+  let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
+  attachments[0].actions[1] = {
+    name: 'add_comment',
+    text: t('add_comment', true),
+    type: 'button',
+    style: 'primary'
+  };
+  attachments[0].actions[2] = {
+    name: 'edit',
+    text: t('edit', true),
+    type: 'select',
+    options: [
+      { text: t('title'), value: 'title' },
+      { text: t('type_description_below'), value: 'type_description' }
+    ],
+    selected_options: [
+      { text: t('type_description_below'), value: 'type_description' },
+    ],
+    style: 'primary'
+  };
+  
+  saveToRedisAndReplyToSlack(data, token, callback, 'edit_description', newMessage, attachments);
 };
 
 const imageSearch = function(data, callback, context) {
@@ -204,11 +242,22 @@ const process = function(data, callback, context) {
           case 'type_comment':
             callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_comment_inside_the_thread_above') });
             break;
-          case 'edit_title':
-            editTitle(data, token, callback);
-            break;
-          case 'type_title':
-            callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_title_inside_the_thread_above') });
+          case 'edit':
+            const attribute = data.actions[0].selected_options[0].value;
+            switch (attribute) {
+              case 'title':
+                editTitle(data, token, callback);
+                break;
+              case 'description':
+                editDescription(data, token, callback);
+                break;
+              case 'type_title':
+                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_title_inside_the_thread_above') });
+                break;
+              case 'type_description':
+                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_description_inside_the_thread_above') });
+                break;
+            }
             break;
           case 'image_search':
             imageSearch(data, callback, context);

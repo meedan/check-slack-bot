@@ -99,10 +99,14 @@ const formatMessageFromData = function(data) {
       style: 'primary'
     },
     {
-      name: 'edit_title',
-      text: t('edit_title', true),
-      type: 'button',
-      style: 'primary'
+      name: 'edit',
+      text: t('edit', true),
+      type: 'select',
+      style: 'primary',
+      options: [
+        { text: t('title'), value: 'title' },
+        { text: t('description'), value: 'description' }
+      ]
     }
   ];
 

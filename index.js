@@ -129,9 +129,9 @@ const process = function(event, callback) {
       else {
         const data = JSON.parse(reply.toString());
 
-        // Adding comment or changing title
+        // Adding comment or changing title or changing description
 
-        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title')) {
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description')) {
 
           getCheckSlackUser(event.user,
             
@@ -153,10 +153,12 @@ const process = function(event, callback) {
                 });
               }
 
-              // Changing title
+              // Changing title or description
 
-              else if (data.mode === 'edit_title') {
-                updateTitle(event, data, token, callback, function(resp) {
+              else if (data.mode === 'edit_title' || data.mode === 'edit_description') {
+                const attribute = data.mode.replace(/^edit_/, '');
+
+                updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
                   const obj = resp.updateProjectMedia.project_media;
                   obj.metadata = JSON.parse(obj.metadata);
                   
@@ -169,7 +171,7 @@ const process = function(event, callback) {
                     }
                   });
 
-                  message = { text: t('title_was_changed_to') + ': ' + obj.metadata.title, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                               response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -231,7 +233,7 @@ const storeSlackMessage = function(event, callback) {
   executeMutation(mutationQuery, vars, ignore, ignore, config.checkApi.apiKey, callback, event, { team_slug: json.team_slug });
 }
 
-const updateTitle = function(event, data, token, callback, done) {
+const updateTitleOrDescription = function(attribute, event, data, token, callback, done) {
   const id = data.graphql_id,
         text = event.text;
   
@@ -275,9 +277,12 @@ const updateTitle = function(event, data, token, callback, done) {
       }
     }
   }`;
+
+  let embed = {};
+  embed[attribute] = text;
   
   const vars = {
-    embed: JSON.stringify({ title: text }),
+    embed: JSON.stringify(embed),
     id: id,
     clientMutationId: `fromSlackMessage:${event.thread_ts}`
   };
