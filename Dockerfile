@@ -12,10 +12,7 @@ RUN cd /tmp \
 WORKDIR /app
 COPY . /app
 
-# compile
-# COPY ./docker-entrypoint.sh /
-# RUN chmod +x /docker-entrypoint.sh
-# RUN npm run build
+# build at runtime
 ENTRYPOINT ["tini", "--"]
 CMD ["npm","run","build"]
 # CMD ["/bin/bash"]
