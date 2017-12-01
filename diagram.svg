@@ -690,7 +690,7 @@
            y="145.54054"
            style="fill:#8f5902" /></flowRegion><flowPara
          id="flowPara4789"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Netto OT';-inkscape-font-specification:'Netto OT';fill:#8f5902">package.zip</flowPara></flowRoot>    <flowRoot
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Netto OT';-inkscape-font-specification:'Netto OT';fill:#8f5902">./dist/aws_lambda_functions.zip</flowPara></flowRoot>    <flowRoot
        transform="matrix(0.11374113,0,0,0.11374113,-12.007012,64.58489)"
        style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#8f5902;fill-opacity:1;stroke:none;stroke-width:0.68498546"
        id="flowRoot7389"
