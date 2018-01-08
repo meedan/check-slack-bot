@@ -11,3 +11,4 @@ aws.json
 .swo
 npm-debug.log
 dist
+package.zip
