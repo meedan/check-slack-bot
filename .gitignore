@@ -5,7 +5,10 @@ node_modules
 *~
 .*.swo
 .*.swp
-package.zip
+./dist/aws_lambda_functions.zip
 aws.json
 .swp
 .swo
+npm-debug.log
+dist
+package.zip

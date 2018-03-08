@@ -19,7 +19,7 @@ The steps below reference the **white** circles on the diagram above.
 * Back to your computer, copy `config.js.example` to `config.js` and define your configurations
 * Copy `aws.json.example` to `aws.json` and add your AWS credentials
 * Install the dependencies with `npm i` and generate a ZIP package with `npm run build`
-* The same `package.zip` file that was generated should be uploaded to three lambda functions **[2]**. The following sections explain how those three functions should be created.
+* The same `./dist/aws_lambda_functions.zip` file that was generated should be uploaded to three lambda functions **[2]**. The following sections explain how those three functions should be created.
 * Create a Lambda function called `check-slack-bot`, whose handler is `index.handler`. It should use subnets `B`, `C` and `D`. **[3]**
 * Add a trigger to this Lambda function, of type "API Gateway". The API should have a single endpoint, that accepts only `POST` requests. Remember to deploy your API once done. **[4]**
 * Create a Lambda function called `check-slack-bot-buttons`, whose handler is `buttons.handler`. It should use subnets `B`, `C` and `D`. **[5]**
