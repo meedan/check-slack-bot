@@ -34,7 +34,7 @@ const formatMessageFromData = function(data) {
 
   let statusColor = '#cccccc';
   let statusLabel = data.last_status;
-  const statuses = JSON.parse(data.verification_statuses);
+  const statuses = data.verification_statuses;
   let options = [];
   statuses.statuses.forEach(function(st) {
     if (st.id === data.last_status) {
