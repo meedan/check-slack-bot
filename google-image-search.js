@@ -32,8 +32,8 @@ exports.handler = function(data, context, callback) {
     }
     else {
       const $ = cheerio.load(body);
-      let name = $('.fKDtNb').html();
-      const result = 'https:' + $('.GMzDwb').attr('src');
+      let name = $('#topstuff .card-section > div + div a').html();
+      const result = 'https:' + $('.card-section > div img').attr('src');
       if (name && result) {
         const link = 'https://www.google.com/searchbyimage?site=search&sa=X&image_url=' + data.image_url;
         const entities = new Entities();
