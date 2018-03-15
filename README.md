@@ -28,7 +28,7 @@ The steps below reference the **white** circles on the diagram above.
 * Now on the Slack app side **[8]**, you need to do a few things:
   * On "Basic Information", copy the verification token to `config.js`, as `slack.verificationToken`
   * On "Interactive Components", put in the "Request URL" field the HTTP path to your `check-slack-bot-buttons` function
-  * On "OAuth & Permissions", copy the "OAuth Access Token" to `config.js` as `slack.accessToken` and to Check API's `config.yml` as `slack_token`, and add the following scopes: `channels.history`, `chat:write:bot` and `chat:write:user`
+  * On "OAuth & Permissions", copy the "OAuth Access Token" to `config.js` as `slack.accessToken`, and add the following scopes: `channels.history`, `chat:write:bot` and `chat:write:user`
   * On "Event Subscriptions", enable events, put in the "Request URL" field the HTTP path to your `check-slack-bot` function and subscribe to the workspace event `message.channels`
   * On "Bot Users", add a new bot called Check
 * Finally, at the Check side **[9]**, create a new global API key and add to `config.js` as `checkApi.apiKey`.

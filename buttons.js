@@ -1,11 +1,11 @@
 const config = require('./config.js'),
       request = require('request'),
       util = require('util'),
-      aws = require('aws-sdk'),
-      VERIFICATION_TOKEN = config.slack.verificationToken,
-      ACCESS_TOKEN = config.slack.accessToken;
+      aws = require('aws-sdk');
+let VERIFICATION_TOKEN = null,
+    ACCESS_TOKEN = null;
 
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig } = require('./helpers.js');
 
 const sendErrorMessage = function(callback, thread, channel, link) {
   callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ': ' + link });
@@ -205,7 +205,7 @@ const imageSearch = function(data, callback, context) {
     lambda.invoke({
       FunctionName: config.googleImageSearchFunctionName || 'google-image-search',
       InvocationType: 'Event',
-      Payload: JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel })
+      Payload: JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel, access_token: ACCESS_TOKEN })
     }, function(error, resp) {
       if (error) {
         console.log('Error from Google Image Search lambda function: ' + util.inspect(error));
@@ -284,6 +284,9 @@ exports.handler = function(data, context, callback) {
       verify(data, callback);
       break;
     default:
+      const teamConfig = getTeamConfig(payload.team.id);
+      ACCESS_TOKEN = teamConfig.accessToken;
+      VERIFICATION_TOKEN = teamConfig.verificationToken;
       process(payload, callback, context);
   }
 };

@@ -12,8 +12,7 @@ const config = require('./config.js'),
       util = require('util'),
       qs = require('querystring'),
       https = require('https'),
-      cheerio = require('cheerio'),
-      ACCESS_TOKEN = config.slack.accessToken;
+      cheerio = require('cheerio');
 
 const { t } = require('./helpers.js');
 
@@ -32,8 +31,8 @@ exports.handler = function(data, context, callback) {
     }
     else {
       const $ = cheerio.load(body);
-      const name = $('._gUb').html();
-      const result = 'https:' + $('._u6').attr('src');
+      const name = $('.fKDtNb').html();
+      const result = 'https:' + $('.GMzDwb').attr('src');
       if (name && result) {
         const link = 'https://www.google.com/searchbyimage?site=search&sa=X&image_url=' + data.image_url;
         json = {
@@ -55,7 +54,7 @@ exports.handler = function(data, context, callback) {
       }
     }
   
-    json.token = ACCESS_TOKEN;
+    json.token = data.access_token;
     json.replace_original = false;
     json.delete_original = false;
     json.thread_ts = data.thread_ts;

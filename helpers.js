@@ -4,8 +4,7 @@ const config = require('./config.js'),
       header = require('basic-auth-header'),
       request = require('request'),
       util = require('util'),
-      redis = require('redis'),
-      VERIFICATION_TOKEN = config.slack.verificationToken;
+      redis = require('redis');
 
 // This should be converted to a localization function later on... currently only turns identifiers into readable strings
 
@@ -200,7 +199,12 @@ const getCheckSlackUser = function(uid, fail, done) {
 };
 
 const verify = function(data, callback) {
-  if (data.token === VERIFICATION_TOKEN) {
+  const tokens = [];
+  for (let team in config.slack) {
+    tokens.push(config.slack[team].verificationToken);
+  }
+  
+  if (tokens.indexOf(data.token) > -1) {
     callback(null, data.challenge);
   }
   else {
@@ -231,6 +235,16 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
   });
 };
 
+const getTeamConfig = function(slackTeamId) {
+  let teamConfig = {};
+  for (let team in config.slack) {
+    if (config.slack[team].teamId === slackTeamId) {
+      teamConfig = config.slack[team];
+    }
+  }
+  return teamConfig;
+};
+
 module.exports = {
   t,
   formatMessageFromData,
@@ -238,5 +252,6 @@ module.exports = {
   getGraphqlClient,
   getCheckSlackUser,
   verify,
-  executeMutation
+  executeMutation,
+  getTeamConfig
 };

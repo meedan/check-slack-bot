@@ -2,10 +2,10 @@ const config = require('./config.js'),
       https = require('https'),
       request = require('request'),
       qs = require('querystring'),
-      util = require('util'),
-      ACCESS_TOKEN = config.slack.accessToken;
+      util = require('util');
+let ACCESS_TOKEN = null;
       
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig } = require('./helpers.js');
 
 const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, done) {
   const client = getGraphqlClient(teamSlug, config.checkApi.apiKey, callback);
@@ -215,7 +215,7 @@ const storeSlackMessage = function(event, callback) {
   const json = JSON.parse(event.attachments[0].callback_id);
 
   const vars = {
-    set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments) }),
+    set_fields: JSON.stringify({ slack_message_id: event.ts, slack_message_channel: event.channel, slack_message_attachments: JSON.stringify(event.attachments), slack_message_token: ACCESS_TOKEN }),
     annotated_id: `${json.id}`,
     clientMutationId: `fromSlackMessage:${event.ts}`
   };
@@ -296,6 +296,8 @@ exports.handler = function(data, context, callback) {
       verify(data, callback);
       break;
     case 'event_callback':
+      const teamConfig = getTeamConfig(data.team_id);
+      ACCESS_TOKEN = teamConfig.accessToken;
       process(data.event, callback);
       break;
     default:
