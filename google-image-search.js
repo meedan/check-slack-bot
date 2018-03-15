@@ -12,7 +12,8 @@ const config = require('./config.js'),
       util = require('util'),
       qs = require('querystring'),
       https = require('https'),
-      cheerio = require('cheerio');
+      cheerio = require('cheerio'),
+      Entities = require('html-entities').AllHtmlEntities;
 
 const { t } = require('./helpers.js');
 
@@ -31,10 +32,12 @@ exports.handler = function(data, context, callback) {
     }
     else {
       const $ = cheerio.load(body);
-      const name = $('.fKDtNb').html();
+      let name = $('.fKDtNb').html();
       const result = 'https:' + $('.GMzDwb').attr('src');
       if (name && result) {
         const link = 'https://www.google.com/searchbyimage?site=search&sa=X&image_url=' + data.image_url;
+        const entities = new Entities();
+        name = entities.decode(name);
         json = {
           response_type: 'in_channel',
           attachments: JSON.stringify([

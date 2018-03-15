@@ -7,6 +7,7 @@
     "aws-sdk": "^2.142.0",
     "basic-auth-header": "^1.0.1",
     "cheerio": "^1.0.0-rc.2",
+    "html-entities": "^1.2.1",
     "lokka": "^1.7.0",
     "lokka-transport-http": "^1.6.1",
     "redis": "^2.8.0",
