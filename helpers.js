@@ -241,13 +241,7 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
 };
 
 const getTeamConfig = function(slackTeamId) {
-  let teamConfig = {};
-  for (let team in config.slack) {
-    if (config.slack[team].teamId === slackTeamId) {
-      teamConfig = config.slack[team];
-    }
-  }
-  return teamConfig;
+  return config.slack[slackTeamId] || {};
 };
 
 module.exports = {
