@@ -52,11 +52,6 @@ const formatMessageFromData = function(data) {
       short: true
     },
     {
-      title: t('tasks_completed', true),
-      value: data.tasks_count.completed + '/' + data.tasks_count.all,
-      short: true
-    },
-    {
       title: t('added_to_check', true),
       value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
       short: true
@@ -72,6 +67,16 @@ const formatMessageFromData = function(data) {
       short: true
     }
   ];
+
+  if (parseInt(data.tasks_count.all) > 0) {
+    fields.push(
+      {
+        title: t('tasks_completed', true),
+        value: data.tasks_count.completed + '/' + data.tasks_count.all,
+        short: true
+      }
+    );
+  }
 
   if (tags.length > 0) {
     fields.push(
