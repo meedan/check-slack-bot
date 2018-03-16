@@ -7,4 +7,6 @@ before_install:
 - echo '...'
 before_script:
 - npm install
+- cp config.js.example config.js
+- npm run build
 script: npm test
