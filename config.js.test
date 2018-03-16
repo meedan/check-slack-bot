@@ -1,0 +1,25 @@
+const config = {
+  checkApi: {
+    url: 'https://check-api-qa.checkmedia.org',
+    apiKey: 'abcdef123456',
+    httpAuth: 'user:pass'
+  },
+  checkWeb: {
+    url: 'https://qa.checkmedia.org',
+  },
+  slack: {
+    T12345ABC: {
+      verificationToken: '123456abcdef',
+      accessToken: 'xoxp-123-456'
+    },
+    T1ABCDEFG: {
+      verificationToken: 'abcdef123456',
+      accessToken: 'xoxp-456-123'
+    }
+  },
+  redisHost: 'redis.localhost',
+  redisPrefix: 'qa',
+  awsRegion: 'us-east-1',
+  googleImageSearchFunctionName: 'google-image-search-qa'
+};
+module.exports = config;
