@@ -1,12 +1,12 @@
 const btoa = require('btoa');
 const buttons = require('./buttons');
 
-const buildData = (token, payload) => {
+const buildData = (token, type, payload) => {
   if (!payload) {
     payload = {};
   }
   const data = {
-    type: 'url_verification',
+    type,
     token: token,
     challenge: 'challenge', 
     body: btoa('payload=' + JSON.stringify(payload)),
@@ -15,14 +15,14 @@ const buildData = (token, payload) => {
 };
 
 test('verify call if team is in config', () => {
-  const data = buildData('123456abcdef');
+  const data = buildData('123456abcdef', 'url_verification');
   const callback = jest.fn();
   buttons.handler(data, null, callback);
   expect(callback).toHaveBeenCalledWith(null, 'challenge'); 
 });
 
 test('does not verify call if team is not in config', () => {
-  const data = buildData('notinconfig');
+  const data = buildData('notinconfig', 'url_verification');
   const callback = jest.fn();
   buttons.handler(data, null, callback);
   expect(callback).toHaveBeenCalledWith('Verification failed');
