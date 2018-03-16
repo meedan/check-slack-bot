@@ -49,3 +49,7 @@ The steps below reference the **yellow** circles on the diagram above.
   * If it's a "change status" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot uses that token to send a mutation to Check API **[7]** to change the status of that media. After the mutation completes, the existing Slack message is updated with the new status **[5]**.
   * If it's a "image search" action, the bot asks Check API for the token of a Check user related to that Slack user **[7]**. If there is such user, the bot replies immediately to Slack **[5]** (because Slack only waits until 3s for an interactive button response) and, at same time, makes an asynchronous request to the `google-image-search` function, using AWS SDK **[8]**. That function will look for similar images on Google an send a message to Slack with the results **[9]**.
 * **[10]** When a comment is created from Check UI or when a report status, title or description is changed from Check UI, Check sends a request to Slack in order to add a new message to a thread or to update an existing Slack message, respectively. This is done _only_ if the report on Check has at least one `slack_message` annotation, which connects a Check report to a Slack message id.
+
+## Tests
+
+In order to run the tests, just run `npm test`.
