@@ -1,11 +1,11 @@
 const config = {
   checkApi: {
-    url: 'https://check-api-qa.checkmedia.org',
-    apiKey: 'abcdef123456',
-    httpAuth: 'user:pass'
+    url: 'http://localhost:13000',
+    apiKey: 'test',
+    httpAuth: false
   },
   checkWeb: {
-    url: 'https://qa.checkmedia.org',
+    url: 'http://localhost:13333',
   },
   slack: {
     T12345ABC: {
@@ -17,7 +17,7 @@ const config = {
       accessToken: 'xoxp-456-123'
     }
   },
-  redisHost: 'redis.localhost',
+  redisHost: 'localhost',
   redisPrefix: 'qa',
   awsRegion: 'us-east-1',
   googleImageSearchFunctionName: 'google-image-search-qa'

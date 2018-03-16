@@ -6,7 +6,7 @@ test('well formed', () => {
       checkApi: {
         url: expect.any(String),
         apiKey: expect.any(String),
-        httpAuth: expect.any(String)
+        httpAuth: expect.anything()
       },
       checkWeb: {
         url: expect.any(String),
