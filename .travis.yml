@@ -3,10 +3,10 @@ dist: trusty
 language: node_js
 node_js:
 - '7'
-before_install:
-- echo '...'
+cache:
+  directories:
+    - 'node_modules'
 before_script:
-- npm install
 - cp config.js.example config.js
 - mkdir dist
 - npm run build
