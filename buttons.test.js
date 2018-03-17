@@ -1,4 +1,6 @@
 const btoa = require('btoa');
+const fetch = require('node-fetch');
+const config = require('./config');
 const buttons = require('./buttons');
 
 const buildData = (token, type, payload) => {
@@ -14,7 +16,7 @@ const buildData = (token, type, payload) => {
   return data;
 };
 
-const buildPayload = (token, teamId, userId) => {
+const buildPayload = (token, teamId, userId, action) => {
   const payload = {
     token,
     team: {
@@ -30,6 +32,7 @@ const buildPayload = (token, teamId, userId) => {
         },
       ],
     },
+    actions: [action]
   };
   return payload;
 };
@@ -38,7 +41,25 @@ const sleep = (s) => {
   return new Promise(resolve => setTimeout(resolve, s * 1000));
 };
 
-const callCheckApi = () => {
+const buildRandomString = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+const callCheckApi = async (path, params) => {
+  let querystring = [];
+  for (let key in params) {
+    querystring.push(key + '=' + params[key]);
+  }
+  if (querystring.length > 0) {
+    querystring = '?' + querystring.join('&');
+  }
+  else {
+    querystring = '';
+  }
+  let url = config.checkApi.url + '/test/' + path + querystring;
+  const res = await fetch(url);
+  const json = await res.json();
+  return json;
 };
 
 test('verify call if team is in config', () => {
@@ -75,5 +96,25 @@ test('return error if Slack user cannot be identified', async () => {
   buttons.handler(data, null, callback);
   await sleep(3);
   expect(outputData).toMatch('Error when trying to identify Slack user');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('do not have the permission') }))
+});
+
+test('identify Slack user and handle invalid action', async () => {
+  const payload = buildPayload('123456abcdef', 'T12345ABC', 'valid', { name: 'test' });
+  const data = buildData('123456abcdef', 'process', payload);
+  const callback = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  let token = buildRandomString();
+  callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
+  callCheckApi('user', { provider: 'slack', uuid: 'valid', token });
+
+  buttons.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ' + token);
+  expect(outputData).toMatch('Unknown action: test');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('do not have the permission') }))
 });

@@ -3,9 +3,38 @@ dist: trusty
 language: node_js
 node_js:
 - '7'
+services:
+- postgresql
+addons:
+  postgresql: '9.4'
 cache:
   directories:
     - 'node_modules'
+    - '/tmp/bundler'
+before_install:
+- sudo rm /etc/apt/sources.list.d/mongodb*
+- sudo apt-get -qq update
+- sudo apt-get install wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libnss3-1d libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server -y
+- rvm --default use 2.3.4
+- export PATH=/tmp/bundler/ruby/2.3.0/bin:$PATH
+- export GEM_PATH=/tmp/bundler/ruby/2.3.0/gems:$GEM_PATH
+- export TEST_ENV_NUMBER=0
+- psql -c 'create database checkdesk_test0;' -U postgres
+- redis-server 2>&1 >/dev/null &
+- wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.4.1.deb && sudo dpkg -i --force-confnew elasticsearch-2.4.1.deb && sudo service elasticsearch restart
+- sleep 15
+- 'echo "script.engine.groovy.inline.update: on" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
+- sudo /usr/share/elasticsearch/bin/plugin install analysis-icu
+- sudo service elasticsearch restart
+- git clone --branch test/6756-new-test-api-endpoints https://github.com/meedan/check-api.git
+- d=configurator/$APP/travis/check-api/; for f in $(find $d -type f); do cp "$f" "check-api/${f/$d/}"; done
+- cd check-api
+- bundle install --path=/tmp/bundler
+- bundle exec rake db:migrate RAILS_ENV=test
+- bundle exec rake lapis:api_keys:create_default RAILS_ENV=test
+- bundle exec thin -p 3000 -e test -t 60 --threadpool-size=60 --threaded start >/dev/null &
+- cd -
+- export RAILS_ENV=development
 before_script:
 - cp config.js.example config.js
 - mkdir dist

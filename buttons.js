@@ -232,6 +232,8 @@ const process = function(data, callback, context) {
       },
 
       function(token) {
+        console.log('Successfully identified as Slack user with token: ' + token);
+
         switch (data.actions[0].name) {
           case 'change_status':
             changeStatus(data, token, callback);
@@ -263,6 +265,7 @@ const process = function(data, callback, context) {
             imageSearch(data, callback, context);
             break;
           default:
+            console.log('Unknown action: ' + data.actions[0].name);
             error(data, callback);
         }
       }
