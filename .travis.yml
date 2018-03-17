@@ -12,6 +12,7 @@ cache:
     - 'node_modules'
     - '/tmp/bundler'
 before_install:
+- git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
 - sudo rm /etc/apt/sources.list.d/mongodb*
 - sudo apt-get -qq update
 - sudo apt-get install wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libnss3-1d libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server -y
@@ -26,7 +27,7 @@ before_install:
 - 'echo "script.engine.groovy.inline.update: on" | sudo tee -a /etc/elasticsearch/elasticsearch.yml'
 - sudo /usr/share/elasticsearch/bin/plugin install analysis-icu
 - sudo service elasticsearch restart
-- git clone --branch test/6756-new-test-api-endpoints https://github.com/meedan/check-api.git
+- git clone https://github.com/meedan/check-api.git
 - d=configurator/$APP/travis/check-api/; for f in $(find $d -type f); do cp "$f" "check-api/${f/$d/}"; done
 - cd check-api
 - bundle install --path=/tmp/bundler
