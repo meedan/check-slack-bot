@@ -1,7 +1,7 @@
 const config = {
   checkApi: {
     url: 'http://localhost:13000',
-    apiKey: 'test',
+    apiKey: 'testkey',
     httpAuth: false
   },
   checkWeb: {
