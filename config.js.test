@@ -1,6 +1,6 @@
 const config = {
   checkApi: {
-    url: 'http://localhost:13000',
+    url: 'http://api.test:13000',
     apiKey: 'testkey',
     httpAuth: false
   },

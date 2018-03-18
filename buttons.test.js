@@ -3,6 +3,8 @@ const fetch = require('node-fetch');
 const config = require('./config');
 const buttons = require('./buttons');
 
+jest.setTimeout(10000);
+
 const buildData = (token, type, payload) => {
   if (!payload) {
     payload = {};

@@ -5,7 +5,7 @@ MAINTAINER Meedan <sysops@meedan.com>
 COPY ./package.json /tmp/package.json
 RUN cd /tmp \
   && npm install \
-  && mkdir -p /app \
+  && mkdir -p /app/dist \
   && cp -a /tmp/node_modules /app/
 
 # install code
@@ -15,4 +15,4 @@ COPY . /app
 # build at runtime
 ENTRYPOINT ["tini", "--"]
 CMD ["npm","run","build"]
-# CMD ["/bin/bash"]
+CMD ["tail", "-f", "/dev/null"]

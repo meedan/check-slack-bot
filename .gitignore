@@ -13,3 +13,4 @@ aws.json
 npm-debug.log
 dist
 package.zip
+jest_*
