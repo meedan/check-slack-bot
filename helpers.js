@@ -194,6 +194,7 @@ const getCheckSlackUser = function(uid, fail, done) {
   const url = config.checkApi.url + '/api/admin/user/slack?uid=' + uid;
 
   request.get({ url: url, json: true, headers: { 'X-Check-Token': config.checkApi.apiKey } }, function(err, res, json) {
+    console.log('Code: ' + res.statusCode + ' JSON: ' + JSON.stringify(json));
     if (!err && res.statusCode === 200 && json && json.data && json.data.token) {
       done(json.data.token);
     }

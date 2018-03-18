@@ -59,7 +59,6 @@ const callCheckApi = async (path, params) => {
   let url = config.checkApi.url + '/test/' + path + querystring;
   const res = await fetch(url);
   const json = await res.json();
-  console.log(JSON.stringify(json));
   return json;
 };
 
