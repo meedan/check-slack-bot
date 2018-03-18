@@ -110,9 +110,8 @@ test('identify Slack user and handle invalid action', async () => {
   console['log'] = jest.fn(storeLog);
 
   let token = buildRandomString();
-  callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
-  callCheckApi('user', { provider: 'slack', uuid, token });
-  await sleep(2);
+  await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
+  await callCheckApi('user', { provider: 'slack', uuid, token });
 
   buttons.handler(data, null, callback);
   await sleep(3);
