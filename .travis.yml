@@ -34,7 +34,7 @@ before_install:
 - bundle exec rake db:migrate RAILS_ENV=test
 - bundle exec rake lapis:api_keys:create_default RAILS_ENV=test
 - bundle exec thin -p 13000 -e test -t 60 --threadpool-size=60 --threaded start &
-  sleep 20
+- sleep 20
 - cd -
 - export RAILS_ENV=development
 before_script:
