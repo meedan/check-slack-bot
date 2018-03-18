@@ -100,7 +100,8 @@ test('return error if Slack user cannot be identified', async () => {
 });
 
 test('identify Slack user and handle invalid action', async () => {
-  const payload = buildPayload('123456abcdef', 'T12345ABC', 'valid', { name: 'test' });
+  let uuid = buildRandomString();
+  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, { name: 'test' });
   const data = buildData('123456abcdef', 'process', payload);
   const callback = jest.fn();
 
@@ -110,7 +111,7 @@ test('identify Slack user and handle invalid action', async () => {
 
   let token = buildRandomString();
   callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
-  callCheckApi('user', { provider: 'slack', uuid: 'valid', token });
+  callCheckApi('user', { provider: 'slack', uuid, token });
 
   buttons.handler(data, null, callback);
   await sleep(3);
