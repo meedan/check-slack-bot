@@ -20,7 +20,7 @@
     "jest": "^22.4.2"
   },
   "scripts": {
-    "test": "mv config.js config.js.bkp; cp config.js.test config.js; jest; code=$?; mv config.js.bkp config.js; exit $code",
+    "test": "mv config.js config.js.bkp; cp config.js.test config.js; jest --coverage; code=$?; mv config.js.bkp config.js; exit $code",
     "build": "npm i && rm -f dist/aws_lambda_functions.zip && zip -q -x ./dist/* -r ./aws_lambda_functions.zip * && mv aws_lambda_functions.zip ./dist/ && echo \"----------\" && echo \"Now upload aws_lambda_functions.zip to AWS Lambda\""
   },
   "author": "Meedan",

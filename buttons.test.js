@@ -64,6 +64,26 @@ const callCheckApi = async (path, params) => {
   return json;
 };
 
+const sendAction = async (action) => {
+  let uuid = buildRandomString();
+  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, action);
+  const data = buildData('123456abcdef', 'process', payload);
+  const callback = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  let token = buildRandomString();
+  await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
+  await callCheckApi('user', { provider: 'slack', uuid, token });
+
+  buttons.handler(data, null, callback);
+  await sleep(3);
+
+  return { outputData, callback };
+};
+
 test('verify call if team is in config', () => {
   const data = buildData('123456abcdef', 'url_verification');
   const callback = jest.fn();
@@ -102,22 +122,26 @@ test('return error if Slack user cannot be identified', async () => {
 });
 
 test('identify Slack user and handle invalid action', async () => {
-  let uuid = buildRandomString();
-  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, { name: 'test' });
-  const data = buildData('123456abcdef', 'process', payload);
-  const callback = jest.fn();
-
-  let outputData = '';
-  storeLog = inputs => (outputData += inputs);
-  console['log'] = jest.fn(storeLog);
-
-  let token = buildRandomString();
-  await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
-  await callCheckApi('user', { provider: 'slack', uuid, token });
-
-  buttons.handler(data, null, callback);
-  await sleep(3);
-  expect(outputData).toMatch('Successfully identified as Slack user with token: ' + token);
+  const { outputData, callback } = await sendAction({ name: 'test' });
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Unknown action: test');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('do not have the permission') }))
+});
+
+test('identify Slack user and handle type_comment command', async () => {
+  const { outputData, callback } = await sendAction({ name: 'type_comment' });
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type your comment') }))
+});
+
+test('identify Slack user and handle type_title command', async () => {
+  const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'type_title' }] });
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new title') }))
+});
+
+test('identify Slack user and handle type_description command', async () => {
+  const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'type_description' }] });
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new description') }))
 });
