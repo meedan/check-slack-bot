@@ -123,9 +123,12 @@ const formatMessageFromData = function(data) {
     });
   }
 
-  let author_icon = data.user.profile_image;
-  if (data.user.source && data.user.source.image) {
-    author_icon = data.user.source.image;
+  let author_icon = '';
+  if (data.user) {
+    author_icon = data.user.profile_image;
+    if (data.user.source && data.user.source.image) {
+      author_icon = data.user.source.image;
+    }
   }
 
   let title = data.metadata.title;
@@ -145,7 +148,7 @@ const formatMessageFromData = function(data) {
       text: description,
       color: statusColor,
       fields: fields,
-      author_name: data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name,
+      author_name: data.user ? (data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name) : data.team.name,
       author_icon: author_icon,
       image_url: data.metadata.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
