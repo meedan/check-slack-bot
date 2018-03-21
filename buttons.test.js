@@ -31,6 +31,10 @@ const buildPayload = (token, teamId, userId, action, callback_id) => {
       attachments: [
         {
           title_link: 'Test',
+          actions: [
+            {},
+            {},
+          ],
         },
       ],
     },
@@ -164,4 +168,12 @@ test('identify Slack user and handle change_status command', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: [expect.objectContaining({ title: expect.stringContaining('VERIFIED: Media Title') })] }));
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'last_status' });
   expect(pm.data.last_status).toBe('verified');
+});
+
+test('identify Slack user and handle add_comment command', async () => {
+  const callback_id = {};
+  const { outputData, callback } = await sendAction({ name: 'add_comment' }, callback_id);
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(outputData).toMatch('Saved Redis');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
 });
