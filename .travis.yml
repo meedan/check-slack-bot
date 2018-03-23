@@ -9,9 +9,6 @@ addons:
   postgresql: '9.4'
   hosts:
     - api.test
-  code_climate:
-    repo_token:
-      secure: 9Odxu9mssSbWHrnJW5kkKi4TEk3Uiyj/sAyInNd0PlDBiTV8Arz+df8hi/ZWayPlSsJ2fCdZ3FO1MkHQT80EOpdLRnzXM5ysVK2gk5hReHVtSliXwHSnHMIuDY6swhakUWk6boTpT2Xwnsd17GmYuXAvW3iMi3bioDmJimwB5Q/qVF1SoDYog/c1hefm1JUtTzGKzinS1rBpwQCPz9Jkegycg8CCI5FJmYaqDKAO8ah6uFjdlNIzxexEkqLqM3B3giR0XcNeSp2G7QuGdbfleciAeRrQSYPH38USbBh1XFcMlWiuZdK9XEHjOPrncxE0EqopT1/XD/myRIfD2TiQ88DfHyKvHndViIoOnDLV/HaWDse3vUJI0SZHA+FYt+GnZDnBugt7I++IOA6sFTHlv9Sgrw+l6pc8hH1S4S9+Wa7P3xkYJZ3OaWFEVPLUR8PbaIO2GTjFEDsThYz1JMlVVFqr4cpXw3N1dROmt477akzdKId1eLJvOtrnbu4qx0RenpeqiYCagunJ9ZI5bU+aOMFTXcw1rDDiBE2b6ThqVcBFHWmUiNpvd8uv52PHJrXO61kg/eSUIvXeZ3JRkvpQ2Ne5FSrm57j2KPxUej8BIGlWNDT3oc174UxfMuEWOptpwZhmNualksItrR5T8zwnDSClBSkhYfuja5nhmiQEktQ=
 cache:
   directories:
     - 'node_modules'
