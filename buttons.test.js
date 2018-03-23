@@ -1,6 +1,7 @@
 const btoa = require('btoa');
 const fetch = require('node-fetch');
-const config = require('./config');
+const aws = require('aws-sdk-mock');
+let config = require('./config');
 const buttons = require('./buttons');
 
 jest.setTimeout(10000);
@@ -18,7 +19,7 @@ const buildData = (token, type, payload) => {
   return data;
 };
 
-const buildPayload = (token, teamId, userId, action, callback_id) => {
+const buildPayload = (token, teamId, userId, action, callback_id, image_url) => {
   const payload = {
     token,
     team: {
@@ -31,6 +32,7 @@ const buildPayload = (token, teamId, userId, action, callback_id) => {
       attachments: [
         {
           title_link: 'Test',
+          image_url: !!image_url,
           actions: [
             {},
             {},
@@ -70,9 +72,9 @@ const callCheckApi = async (path, params) => {
   return json;
 };
 
-const sendAction = async (action, callback_id) => {
+const sendAction = async (action, callback_id, image_url) => {
   let uuid = buildRandomString();
-  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, action, callback_id);
+  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, action, callback_id, image_url);
   const data = buildData('123456abcdef', 'process', payload);
   const callback = jest.fn();
 
@@ -170,12 +172,30 @@ test('identify Slack user and handle change_status command', async () => {
   expect(pm.data.last_status).toBe('verified');
 });
 
+test('identify Slack user and return error if user cannot run the change_status command', async () => {
+  const callback_id = { last_status_id: 'xyz123', team_slug: 'test' };
+  const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
+  expect(outputData).toMatch('Error when executing mutation');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('continue directly from Check: Test') }));
+});
+
 test('identify Slack user and handle add_comment command', async () => {
   const callback_id = {};
   const { outputData, callback } = await sendAction({ name: 'add_comment' }, callback_id);
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Saved Redis');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
+});
+
+test('identify Slack user and handle add_comment command when cannot connect to Redis', async () => {
+  const callback_id = {};
+  const redisHost = config.redisHost;
+  config.redisHost = 'invalid';
+  const { outputData, callback } = await sendAction({ name: 'add_comment' }, callback_id);
+  config.redisHost = redisHost;
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(outputData).toMatch('Error when connecting to Redis');
+  expect(callback).not.toHaveBeenCalled();
 });
 
 test('identify Slack user and handle edit title command', async () => {
@@ -199,4 +219,14 @@ test('identify Slack user and handle image_search command on report without imag
   const { outputData, callback } = await sendAction({ name: 'image_search' }, callback_id);
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('There are no images on this report') }));
+});
+
+test('identify Slack user and handle image_search command on report with image', async () => {
+  const callback_id = {};
+  const functionName = config.googleImageSearchFunctionName;
+  config.googleImageSearchFunctionName = false;
+  const { outputData, callback } = await sendAction({ name: 'image_search' }, callback_id, 'https://picsum.photos/200/300/?random');
+  config.googleImageSearchFunctionName = functionName;
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Please wait while I look for similar images') }));
 });

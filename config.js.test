@@ -20,6 +20,6 @@ const config = {
   redisHost: 'localhost',
   redisPrefix: 'qa',
   awsRegion: 'us-east-1',
-  googleImageSearchFunctionName: 'google-image-search-qa'
+  googleImageSearchFunctionName: 'google-image-search-test'
 };
 module.exports = config;

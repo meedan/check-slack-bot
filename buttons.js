@@ -83,29 +83,24 @@ const saveToRedisAndReplyToSlack = function(data, token, callback, mode, newMess
   const redis = getRedisClient();
   
   redis.on('connect', function() {
-    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function(e) {
-      if (e) {
-        console.log('Redis error: ' + e);
-        error(data, callback);
-      }
-      else {
-        let json = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
-        callback(null, json);
+    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function() {
+      let json = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
+      callback(null, json);
 
-        json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
-        
-        const options = {
-          uri: data.response_url,
-          method: 'POST',
-          json: json
-        };
+      json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
+      
+      const options = {
+        uri: data.response_url,
+        method: 'POST',
+        json: json
+      };
 
-        request(options, function(err, response, body) {
-          console.log('Output from delayed response: ' + body);
-        });
+      request(options, function(err, response, body) {
+        console.log('Output from delayed response: ' + body);
+      });
     
-        console.log('Saved Redis key slack_message_ts:' + data.message_ts);
-      }
+      console.log('Saved Redis key slack_message_ts:' + data.message_ts);
+      
       redis.quit();
     });
   });
@@ -198,22 +193,16 @@ const imageSearch = function(data, callback, context) {
 
     aws.config.loadFromPath('./aws.json');
     
-    const lambda = new aws.Lambda({
-      region: config.awsRegion
-    });
-    
-    lambda.invoke({
-      FunctionName: config.googleImageSearchFunctionName || 'google-image-search',
-      InvocationType: 'Event',
-      Payload: JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel, access_token: ACCESS_TOKEN })
-    }, function(error, resp) {
-      if (error) {
-        console.log('Error from Google Image Search lambda function: ' + util.inspect(error));
-      }
-      if (resp) {
-        console.log('Response from Google Image Search lambda function: ' + util.inspect(resp));
-      }
-    });
+    try {
+      const lambda = new aws.Lambda({
+        region: config.awsRegion
+      });
+
+      const payload = JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel, access_token: ACCESS_TOKEN });
+      const functionName = config.googleImageSearchFunctionName || 'google-image-search';
+      
+      lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: payload });
+    } catch (e) {}
   
     callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images_-_I_will_post_a_reply_inside_a_thread_above') });
   }
