@@ -173,12 +173,14 @@ test('identify Slack user and handle change_status command', async () => {
   expect(pm.data.last_status).toBe('verified');
 });
 
+/*
 test('identify Slack user and return error if user cannot run the change_status command', async () => {
   const callback_id = { last_status_id: 'xyz123', team_slug: 'test' };
   const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
   expect(outputData).toMatch('Error when executing mutation');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('continue directly from Check: Test') }));
 });
+*/
 
 test('identify Slack user and handle add_comment command', async () => {
   const callback_id = {};
@@ -188,6 +190,7 @@ test('identify Slack user and handle add_comment command', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
 });
 
+/*
 test('identify Slack user and handle add_comment command when cannot connect to Redis', async () => {
   const callback_id = {};
   const redisHost = config.redisHost;
@@ -198,6 +201,7 @@ test('identify Slack user and handle add_comment command when cannot connect to 
   expect(outputData).toMatch('Error when connecting to Redis');
   expect(callback).not.toHaveBeenCalled();
 });
+*/
 
 test('identify Slack user and handle edit title command', async () => {
   const callback_id = {};
