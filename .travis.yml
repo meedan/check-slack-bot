@@ -17,7 +17,7 @@ cache:
     - 'node_modules'
     - '/tmp/bundler'
 before_install:
-- sudo npm install -g codeclimate-test-reporter
+- npm install -g codeclimate-test-reporter
 - git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
 - sudo rm /etc/apt/sources.list.d/mongodb*
 - sudo apt-get -qq update
