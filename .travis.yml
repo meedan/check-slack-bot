@@ -44,6 +44,7 @@ before_install:
 - cd -
 before_script:
 - cp config.js.example config.js
+- cp aws.json.example aws.json
 - mkdir dist
 - npm run build
 script: npm test
