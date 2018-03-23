@@ -225,6 +225,7 @@ test('identify Slack user and handle image_search command on report with image',
   const callback_id = {};
   const functionName = config.googleImageSearchFunctionName;
   config.googleImageSearchFunctionName = false;
+  aws.mock('Lambda', 'invoke');
   const { outputData, callback } = await sendAction({ name: 'image_search' }, callback_id, 'https://picsum.photos/200/300/?random');
   config.googleImageSearchFunctionName = functionName;
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
