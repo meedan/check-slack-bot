@@ -190,7 +190,6 @@ test('identify Slack user and handle add_comment command', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
 });
 
-/*
 test('identify Slack user and handle add_comment command when cannot connect to Redis', async () => {
   const callback_id = {};
   const redisHost = config.redisHost;
@@ -201,7 +200,6 @@ test('identify Slack user and handle add_comment command when cannot connect to 
   expect(outputData).toMatch('Error when connecting to Redis');
   expect(callback).not.toHaveBeenCalled();
 });
-*/
 
 test('identify Slack user and handle edit title command', async () => {
   const callback_id = {};
