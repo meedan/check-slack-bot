@@ -48,7 +48,7 @@ before_script:
 - npm run build
 script: npm test
 after_script:
-- cd coverage && codeclimate-test-reporter < lcov.info && cd -
+- cd coverage && ./../node_modules/.bin/codeclimate-test-reporter < lcov.info && cd -
 notifications:
   slack:
     secure: gS8DOqLHTUUWpcimRfaxy6/Zexgbp91mdZ3N5556GkJEI90IV53JX+XuJkzMpR5GzmBcai8lb1ZaOGuhWXQl1785KG3pX4gW05GxHhxxuMXgHVQhkw+V48fPv6BJs4wsycDeU+xBeVp6FgeXGyfznDlYxuEdx4CvdvKcjh9QdWZ72iX5ghISzFzrK3RMZtMOSsWPixI2GLOPXR/1BpP7Uz7MzlwqgS7sP1i9AZhNpdsI5YKgiKgl0a1J6Qz3UAE5WF7GKIjde8f0G7blE5N0oiKIO8WPL7JwMlnNHXO0Yf/ghrcEZSO3FscdYdWSeBh7Ja/WGn/H8y9YHfZ7zNbxcOaOcQ2tK/KsOK2PsHa7mhHA/nIWZca0jjkvdNsgjol4P9jfkKBWF1wQSmtk8QYYRQoJTlkYVyMqhGlIeIseesQ4bqibU5O1U96g4kWNvz44d40XvUtTlhy1+4ihnFsNdJVds+MIKftCXUYeS8gUL8gBtMoNYgdBixU5GzfQexaEA4KU58Rv3x4dc1CGmkFIEwQWkxKKaHHthaKh7wFqoLK8EiV9BOAqfH92tqh4JxNrcdTjdX7Z515RYJRZTFmRlWXMHDZEywXxbWcqtGb3OPD/R/Kw4lbhkvRMs+32kE6pa47hgGCRiQnaPRUFrWgwrjIj6K9g1dmLjIAYa77oY4Y=
