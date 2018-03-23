@@ -9,11 +9,15 @@ addons:
   postgresql: '9.4'
   hosts:
     - api.test
+  code_climate:
+    repo_token:
+      secure: 9Odxu9mssSbWHrnJW5kkKi4TEk3Uiyj/sAyInNd0PlDBiTV8Arz+df8hi/ZWayPlSsJ2fCdZ3FO1MkHQT80EOpdLRnzXM5ysVK2gk5hReHVtSliXwHSnHMIuDY6swhakUWk6boTpT2Xwnsd17GmYuXAvW3iMi3bioDmJimwB5Q/qVF1SoDYog/c1hefm1JUtTzGKzinS1rBpwQCPz9Jkegycg8CCI5FJmYaqDKAO8ah6uFjdlNIzxexEkqLqM3B3giR0XcNeSp2G7QuGdbfleciAeRrQSYPH38USbBh1XFcMlWiuZdK9XEHjOPrncxE0EqopT1/XD/myRIfD2TiQ88DfHyKvHndViIoOnDLV/HaWDse3vUJI0SZHA+FYt+GnZDnBugt7I++IOA6sFTHlv9Sgrw+l6pc8hH1S4S9+Wa7P3xkYJZ3OaWFEVPLUR8PbaIO2GTjFEDsThYz1JMlVVFqr4cpXw3N1dROmt477akzdKId1eLJvOtrnbu4qx0RenpeqiYCagunJ9ZI5bU+aOMFTXcw1rDDiBE2b6ThqVcBFHWmUiNpvd8uv52PHJrXO61kg/eSUIvXeZ3JRkvpQ2Ne5FSrm57j2KPxUej8BIGlWNDT3oc174UxfMuEWOptpwZhmNualksItrR5T8zwnDSClBSkhYfuja5nhmiQEktQ=
 cache:
   directories:
     - 'node_modules'
     - '/tmp/bundler'
 before_install:
+- npm install -g codeclimate-test-reporter
 - git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
 - sudo rm /etc/apt/sources.list.d/mongodb*
 - sudo apt-get -qq update
@@ -44,6 +48,8 @@ before_script:
 - mkdir dist
 - npm run build
 script: npm test
+after_script:
+- cd coverage && codeclimate-test-reporter < lcov.info && cd -
 notifications:
   slack:
     secure: gS8DOqLHTUUWpcimRfaxy6/Zexgbp91mdZ3N5556GkJEI90IV53JX+XuJkzMpR5GzmBcai8lb1ZaOGuhWXQl1785KG3pX4gW05GxHhxxuMXgHVQhkw+V48fPv6BJs4wsycDeU+xBeVp6FgeXGyfznDlYxuEdx4CvdvKcjh9QdWZ72iX5ghISzFzrK3RMZtMOSsWPixI2GLOPXR/1BpP7Uz7MzlwqgS7sP1i9AZhNpdsI5YKgiKgl0a1J6Qz3UAE5WF7GKIjde8f0G7blE5N0oiKIO8WPL7JwMlnNHXO0Yf/ghrcEZSO3FscdYdWSeBh7Ja/WGn/H8y9YHfZ7zNbxcOaOcQ2tK/KsOK2PsHa7mhHA/nIWZca0jjkvdNsgjol4P9jfkKBWF1wQSmtk8QYYRQoJTlkYVyMqhGlIeIseesQ4bqibU5O1U96g4kWNvz44d40XvUtTlhy1+4ihnFsNdJVds+MIKftCXUYeS8gUL8gBtMoNYgdBixU5GzfQexaEA4KU58Rv3x4dc1CGmkFIEwQWkxKKaHHthaKh7wFqoLK8EiV9BOAqfH92tqh4JxNrcdTjdX7Z515RYJRZTFmRlWXMHDZEywXxbWcqtGb3OPD/R/Kw4lbhkvRMs+32kE6pa47hgGCRiQnaPRUFrWgwrjIj6K9g1dmLjIAYa77oY4Y=
