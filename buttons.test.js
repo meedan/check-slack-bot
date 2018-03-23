@@ -222,7 +222,6 @@ test('identify Slack user and handle image_search command on report without imag
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('There are no images on this report') }));
 });
 
-/*
 test('identify Slack user and handle image_search command on report with image', async () => {
   const functionName = config.googleImageSearchFunctionName;
   config.googleImageSearchFunctionName = false;
@@ -244,4 +243,3 @@ test('identify Slack user and handle image_search command on report with image',
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Please wait while I look for similar images') }));
 });
-*/
