@@ -1,6 +1,7 @@
 const btoa = require('btoa');
 const fetch = require('node-fetch');
-const aws = require('aws-sdk-mock');
+let aws = require('aws-sdk');
+const awsMock = require('aws-sdk-mock');
 let config = require('./config');
 const buttons = require('./buttons');
 
@@ -222,13 +223,23 @@ test('identify Slack user and handle image_search command on report without imag
 });
 
 test('identify Slack user and handle image_search command on report with image', async () => {
-  const callback_id = {};
   const functionName = config.googleImageSearchFunctionName;
   config.googleImageSearchFunctionName = false;
-  aws.mock('Lambda', 'invoke', function() { console.log('AWS Mocked'); });
-  const { outputData, callback } = await sendAction({ name: 'image_search' }, callback_id, 'https://picsum.photos/200/300/?random');
-  expect(outputData).toMatch('AWS Mocked');
+  const awsConfig = aws.config;
+  aws.config = {
+    loadFromPath: (path) => {
+      console.log('AWS Mocked Config');
+    }
+  };
+  awsMock.mock('Lambda', 'invoke', function() { console.log('AWS Mocked Method'); });
+  
+  const { outputData, callback } = await sendAction({ name: 'image_search' }, {}, 'https://picsum.photos/200/300/?random');
+
+  aws.config = awsConfig;
   config.googleImageSearchFunctionName = functionName;
+  
+  expect(outputData).toMatch('AWS Mocked Config');
+  expect(outputData).toMatch('AWS Mocked Method');
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Please wait while I look for similar images') }));
 });
