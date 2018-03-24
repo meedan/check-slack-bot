@@ -1,5 +1,7 @@
 # Check Slack Bot
 
+[![Test Coverage](https://api.codeclimate.com/v1/badges/7af7ca1a231b34837ab4/test_coverage)](https://codeclimate.com/github/meedan/check-bot/test_coverage) [![Build Status](https://travis-ci.org/meedan/check-bot.svg?branch=develop)](https://travis-ci.org/meedan/check-bot)
+
 This is a Slack bot for Check. It should reply to messages that contain one or more Check URLs and display a preview of it as a Slack message, with interaction buttons.
 
 [These](https://www.youtube.com/watch?v=3v6asqguGIc) [awesome](https://www.youtube.com/watch?v=0foyYpTZrV4) [videos](https://www.youtube.com/watch?v=28IimNrjhwg) show how it works.
