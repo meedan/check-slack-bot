@@ -5,18 +5,21 @@ node_js:
 - '7'
 services:
 - postgresql
+env:
+  global:
+    secure: sNHxH6hgZez0cWD/eT7bQbLUEKp5LVraa4Xl+CWjpcLONHLFGL/N4tYw0kHgfsP/mGWiVzywkDcuhiVx4vnr6zH3y2aw0U7KKHe2IALDRckzOb2eQH6us2RNpdKInloBy+2QPuGhQ3CMawmAwX+2y56JGU93jgiwbToXN7KOMGcqjQ2DbdVeKe8l/eX3ZXTCXVCIwbx+D2bQKPSiwr1dHi/5yRdKEn8J9kAmZFSPAG0MhcJoLFh9zeegIYzhJ5B/E29R5VchuY4gye88s3AYefR0A+z3wdBSo7BoCIizk1vj1XuIEzoYjMBxDBbIdx9lkoz+jAvSFaqhOg9qzXMmCRbIGKUIWPlvzWyt+/OVEeXp4iu3kDYaQM54yLhu5WqNIvBX1dLkv3V+PkBQ1ydeHbWN0qcYpGSjfCwoEgKJ+IsjinJAxpCmoL+p2xlgK+u70wOLqMSd+00MY728kD47rQ7h7zyTwJDIfFT7AL5uJacOE4K8h1hT2xZs65yUitVAnqPNfpr8HSsZKvc6EVz7KfAcQo45SKUF9qEx5RKbPUCjcxYdQfEOlJTxJh+nZg481L2n60c/O6LkE7Ne8zRKFrFhN7XnCZ5OUI+zUX4zldPo4gTMluJUigGpxwxwEivgslkpmOm8Els3a9E7qFQar3CzZXKfAa8F4SMDVrUi1h0=
 addons:
   postgresql: '9.4'
   hosts:
     - api.test
-  code_climate:
-    repo_token:
-      secure: 9Odxu9mssSbWHrnJW5kkKi4TEk3Uiyj/sAyInNd0PlDBiTV8Arz+df8hi/ZWayPlSsJ2fCdZ3FO1MkHQT80EOpdLRnzXM5ysVK2gk5hReHVtSliXwHSnHMIuDY6swhakUWk6boTpT2Xwnsd17GmYuXAvW3iMi3bioDmJimwB5Q/qVF1SoDYog/c1hefm1JUtTzGKzinS1rBpwQCPz9Jkegycg8CCI5FJmYaqDKAO8ah6uFjdlNIzxexEkqLqM3B3giR0XcNeSp2G7QuGdbfleciAeRrQSYPH38USbBh1XFcMlWiuZdK9XEHjOPrncxE0EqopT1/XD/myRIfD2TiQ88DfHyKvHndViIoOnDLV/HaWDse3vUJI0SZHA+FYt+GnZDnBugt7I++IOA6sFTHlv9Sgrw+l6pc8hH1S4S9+Wa7P3xkYJZ3OaWFEVPLUR8PbaIO2GTjFEDsThYz1JMlVVFqr4cpXw3N1dROmt477akzdKId1eLJvOtrnbu4qx0RenpeqiYCagunJ9ZI5bU+aOMFTXcw1rDDiBE2b6ThqVcBFHWmUiNpvd8uv52PHJrXO61kg/eSUIvXeZ3JRkvpQ2Ne5FSrm57j2KPxUej8BIGlWNDT3oc174UxfMuEWOptpwZhmNualksItrR5T8zwnDSClBSkhYfuja5nhmiQEktQ=
 cache:
   directories:
     - 'node_modules'
     - '/tmp/bundler'
 before_install:
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+- chmod +x cc-test-reporter
+- ./cc-test-reporter before-build
 - git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
 - sudo rm /etc/apt/sources.list.d/mongodb*
 - sudo apt-get -qq update
@@ -24,7 +27,6 @@ before_install:
 - rvm --default use 2.3.4
 - export PATH=/tmp/bundler/ruby/2.3.0/bin:$PATH
 - export GEM_PATH=/tmp/bundler/ruby/2.3.0/gems:$GEM_PATH
-- export TEST_ENV_NUMBER=0
 - psql -c 'create database checkdesk_test0;' -U postgres
 - redis-server 2>&1 >/dev/null &
 - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.4.1.deb && sudo dpkg -i --force-confnew elasticsearch-2.4.1.deb && sudo service elasticsearch restart
@@ -48,7 +50,7 @@ before_script:
 - npm run build
 script: npm test
 after_script:
-- cd coverage && ./../node_modules/.bin/codeclimate-test-reporter < lcov.info && cd -
+- ./cc-test-reporter after-build --exit-code $code
 notifications:
   slack:
     secure: gS8DOqLHTUUWpcimRfaxy6/Zexgbp91mdZ3N5556GkJEI90IV53JX+XuJkzMpR5GzmBcai8lb1ZaOGuhWXQl1785KG3pX4gW05GxHhxxuMXgHVQhkw+V48fPv6BJs4wsycDeU+xBeVp6FgeXGyfznDlYxuEdx4CvdvKcjh9QdWZ72iX5ghISzFzrK3RMZtMOSsWPixI2GLOPXR/1BpP7Uz7MzlwqgS7sP1i9AZhNpdsI5YKgiKgl0a1J6Qz3UAE5WF7GKIjde8f0G7blE5N0oiKIO8WPL7JwMlnNHXO0Yf/ghrcEZSO3FscdYdWSeBh7Ja/WGn/H8y9YHfZ7zNbxcOaOcQ2tK/KsOK2PsHa7mhHA/nIWZca0jjkvdNsgjol4P9jfkKBWF1wQSmtk8QYYRQoJTlkYVyMqhGlIeIseesQ4bqibU5O1U96g4kWNvz44d40XvUtTlhy1+4ihnFsNdJVds+MIKftCXUYeS8gUL8gBtMoNYgdBixU5GzfQexaEA4KU58Rv3x4dc1CGmkFIEwQWkxKKaHHthaKh7wFqoLK8EiV9BOAqfH92tqh4JxNrcdTjdX7Z515RYJRZTFmRlWXMHDZEywXxbWcqtGb3OPD/R/Kw4lbhkvRMs+32kE6pa47hgGCRiQnaPRUFrWgwrjIj6K9g1dmLjIAYa77oY4Y=
