@@ -27,6 +27,7 @@ before_install:
 - rvm --default use 2.3.4
 - export PATH=/tmp/bundler/ruby/2.3.0/bin:$PATH
 - export GEM_PATH=/tmp/bundler/ruby/2.3.0/gems:$GEM_PATH
+- export TEST_ENV_NUMBER=0
 - psql -c 'create database checkdesk_test0;' -U postgres
 - redis-server 2>&1 >/dev/null &
 - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.4.1.deb && sudo dpkg -i --force-confnew elasticsearch-2.4.1.deb && sudo service elasticsearch restart
