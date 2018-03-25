@@ -22,7 +22,7 @@
     "jest": "^22.4.2"
   },
   "scripts": {
-    "test": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest --coverage; code=$?; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
+    "test": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest --coverage --collectCoverageFrom=*.js --collectCoverageFrom=!test-helpers.js; code=$?; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
     "build": "npm i && rm -f dist/aws_lambda_functions.zip && zip -q -x ./dist/* -r ./aws_lambda_functions.zip * && mv aws_lambda_functions.zip ./dist/ && echo \"----------\" && echo \"Now upload aws_lambda_functions.zip to AWS Lambda\""
   },
   "jest": {

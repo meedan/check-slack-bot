@@ -79,13 +79,7 @@ const formatMessageFromData = function(data) {
   }
 
   if (tags.length > 0) {
-    fields.push(
-      {
-        title: t('tags'),
-        value: tags.join(', '),
-        short: true
-      }
-    );
+    fields.push({ title: t('tags'), value: tags.join(', '), short: true });
   }
 
   let actions = [
@@ -164,19 +158,10 @@ const formatMessageFromData = function(data) {
 
 const getRedisClient = function() {
   const client = redis.createClient({ host: config.redisHost });
-
-  client.on('error', function(err) {
-    console.log('Error when connecting to Redis: ' + err);
-  });
-
   return client;
 };
 
 const getGraphqlClient = function(team, token, callback) {
-  const handleErrors = function(errors, resp) {
-    console.log('Error on GraphQL call: ' + util.inspect(errors));
-  };
-  
   const headers = {
     'X-Check-Token': token
   };
@@ -187,7 +172,7 @@ const getGraphqlClient = function(team, token, callback) {
     headers['Authorization'] = basic;
   }
 
-  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + team, { handleErrors, headers, credentials: false, timeout: 120000 });
+  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + team, { headers, credentials: false, timeout: 120000 });
   const client = new Lokka({ transport });
 
   return client;
@@ -236,10 +221,6 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
       console.log('Error when executing mutation: ' + util.inspect(err));
       fail(callback, thread, channel, data.link);
     }
-  })
-  .catch(function(e) {
-    console.log('Error when executing mutation: ' + util.inspect(e));
-    fail(callback, thread, channel, data.link);
   });
 };
 

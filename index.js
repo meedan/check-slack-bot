@@ -53,18 +53,13 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 
   client.query(projectMediaQuery, { ids: projectMediaId + ',' + projectId })
   .then((resp, errors) => {
-    if (errors) {
-      console.log('GraphQL query error: ' + util.inspect(errors));
-    }
-    else {
-      console.log('GraphQL query response: ' + util.inspect(resp));
-      const pm = resp.project_media;
-      pm.metadata = JSON.parse(pm.metadata);
-      done(pm);
-    }
+    console.log('GraphQL query response: ' + util.inspect(resp));
+    const pm = resp.project_media;
+    pm.metadata = JSON.parse(pm.metadata);
+    done(pm);
   })
   .catch(function(e) {
-    console.log('GraphQL query error: ' + e.toString());
+    console.log('GraphQL query exception: ' + e.toString());
   });
 };
 
@@ -76,7 +71,6 @@ const process = function(event, callback) {
 
   if (!event.bot_id && mainRegexp.test(event.text)) {
     while (matches = regexp.exec(event.text)) {
-
       const teamSlug = matches[1],
             projectId = matches[2],
             projectMediaId = matches[3];
@@ -91,8 +85,6 @@ const process = function(event, callback) {
         const query = qs.stringify(message);
         https.get('https://slack.com/api/chat.postMessage?' + query, (res) => {
           console.log('Slack response status code: ' + res.statusCode);
-        }).on('error', (e) => {
-          console.log('Slack error: ' + util.inspect(e));
         });
       });
     }
@@ -118,11 +110,7 @@ const process = function(event, callback) {
     const redis = getRedisClient();
     redis.get('slack_message_ts:' + config.redisPrefix + ':' + event.thread_ts, function(err, reply) {
       
-      if (err) {
-        console.log('Error when getting information from Redis: ' + err);
-      }
-      
-      else if (!reply) {
+      if (!reply) {
         console.log('Could not find Redis key slack_message_ts:' + event.thread_ts);
       }
       
@@ -155,7 +143,7 @@ const process = function(event, callback) {
 
               // Changing title or description
 
-              else if (data.mode === 'edit_title' || data.mode === 'edit_description') {
+              else {
                 const attribute = data.mode.replace(/^edit_/, '');
 
                 updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
@@ -166,9 +154,7 @@ const process = function(event, callback) {
                   const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
 
                   request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
-                    if (err) {
-                      console.log('Error when trying to update Slack message: ' + err);
-                    }
+                    console.log('Response from Slack message update: ' + res);
                   });
 
                   message = { text: t(attribute + '_was_changed_to') + ': ' + obj.metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
