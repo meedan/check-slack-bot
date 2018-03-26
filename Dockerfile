@@ -1,6 +1,9 @@
 FROM meedan/nodejs
 MAINTAINER Meedan <sysops@meedan.com>
 
+# install dependencies
+RUN apt-get update -qq && apt-get install -y redis-server --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 # node modules
 COPY ./package.json /tmp/package.json
 RUN cd /tmp \
@@ -12,7 +15,8 @@ RUN cd /tmp \
 WORKDIR /app
 COPY . /app
 
-# build at runtime
+# startup
+COPY ./docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["tini", "--"]
-CMD ["npm","run","build"]
-CMD ["tail", "-f", "/dev/null"]
+CMD ["/docker-entrypoint.sh"]
