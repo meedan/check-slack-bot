@@ -201,7 +201,8 @@ const imageSearch = function(data, callback, context) {
       const payload = JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel, access_token: ACCESS_TOKEN });
       const functionName = config.googleImageSearchFunctionName || 'google-image-search';
       
-      lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: payload });
+      const lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: payload });
+      lambdaRequest.send();
     } catch (e) {}
   
     callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images_-_I_will_post_a_reply_inside_a_thread_above') });
