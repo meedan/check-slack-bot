@@ -24,10 +24,11 @@ exports.handler = function(data, context, callback) {
     headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11' }
   };
   
-  request(options, function(err, res, body) {
+  request.get(options, function(err, res, body) {
     json = {};
   
     if (err) {
+      console.log('Image search error: ' + err);
       json = { response_type: 'ephemeral', text: t('something_went_wrong_when_looking_for_similar_images') };
     }
     else {
@@ -38,6 +39,8 @@ exports.handler = function(data, context, callback) {
         const link = 'https://www.google.com/searchbyimage?site=search&sa=X&image_url=' + data.image_url;
         const entities = new Entities();
         name = entities.decode(name);
+        console.log('Image search name: ' + name);
+        console.log('Image search URL: ' + result);
         json = {
           response_type: 'in_channel',
           attachments: JSON.stringify([
@@ -53,6 +56,7 @@ exports.handler = function(data, context, callback) {
         };
       }
       else {
+        console.log('No results for image search');
         json = { response_type: 'ephemeral', text: t('no_image_search_results_found_now_-_please_try_again_later') };
       }
     }

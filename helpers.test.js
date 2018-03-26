@@ -33,6 +33,9 @@ test('connect to GraphQL', async () => {
 
 test('translate string', () => {
   expect(t('foo_bar')).toBe('Foo bar'); 
+});
+
+test('translate string with capitals', () => {
   expect(t('foo_bar', true)).toBe('Foo Bar'); 
 });
 
