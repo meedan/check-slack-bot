@@ -8,7 +8,7 @@ const {
   sendAction
 } = require('./test-helpers.js');
 
-jest.setTimeout(10000);
+jest.setTimeout(120000);
 
 const buildData = (token, type, event) => {
   const data = {
@@ -113,6 +113,46 @@ test('identify Slack user and create comment', async () => {
   const thread_ts = new Date().getTime();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
   const value = JSON.stringify({ mode: 'comment', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const event = { channel: 'test', thread_ts, user: uuid, text: 'Test' };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,annotations' });
+  const n = pm.data.annotations.length
+
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).not.toMatch('Error when trying to identify Slack user');
+
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'annotations' });
+  expect(pm.data.annotations.length).toBeGreaterThan(n);
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('identify Slack user and create translation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
+  await sleep(1);
+
+  const uuid = buildRandomString();
+  const token = buildRandomString();
+  const email = buildRandomString() + '@test.com';
+  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,graphql_id' });
+
+  const thread_ts = new Date().getTime();
+  const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
+  const value = JSON.stringify({ mode: 'add_translation_en', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id });
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
@@ -253,6 +293,10 @@ const buttonAction = async (mode) => {
 
 test('cannot identify Slack user in comment mode', async () => {
   await buttonAction('comment');
+});
+
+test('cannot identify Slack user in translation mode', async () => {
+  await buttonAction('add_translation_en');
 });
 
 test('cannot identify Slack user in edit_title mode', async () => {

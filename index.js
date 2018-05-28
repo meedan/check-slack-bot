@@ -26,6 +26,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       tasks_count
       project {
         title
+        get_languages
       }
       tags {
         edges {
@@ -47,6 +48,8 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
         slug
       }
       verification_statuses
+      translation_statuses
+      target_languages
     }
   }
   `;
@@ -83,9 +86,21 @@ const process = function(event, callback) {
         };
 
         const query = qs.stringify(message);
-        https.get('https://slack.com/api/chat.postMessage?' + query, (res) => {
+        const options = {
+          hostname: 'slack.com',
+          port: 443,
+          path: '/api/chat.postMessage',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': query.length
+          }
+        };
+        const request = https.request(options, (res) => {
           console.log('Slack response status code: ' + res.statusCode);
         });
+        request.write(query);
+        request.end();
       });
     }
   }
@@ -117,9 +132,9 @@ const process = function(event, callback) {
       else {
         const data = JSON.parse(reply.toString());
 
-        // Adding comment or changing title or changing description
+        // Adding comment or changing title or changing description or adding translation
 
-        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description')) {
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description' || /^add_translation_/.test(data.mode))) {
 
           getCheckSlackUser(event.user,
             
@@ -135,6 +150,17 @@ const process = function(event, callback) {
               if (data.mode === 'comment') {
                 createComment(event, data, token, callback, function(resp) {
                   const message = { text: t('your_comment_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                                    response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                  const query = qs.stringify(message);
+                  https.get('https://slack.com/api/chat.postMessage?' + query);
+                });
+              }
+
+              // Adding translation
+
+              else if (/^add_translation_/.test(data.mode)) {
+                addTranslation(event, data, token, callback, function(resp) {
+                  const message = { text: t('your_translation_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   const query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -176,7 +202,7 @@ const process = function(event, callback) {
 };
 
 const sendErrorMessage = function(callback, thread, channel, link) {
-  const message = { text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ' ' + link, thread_ts: thread, replace_original: false, delete_original: false,
+  const message = { text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ' ' + link, thread_ts: thread, replace_original: false, delete_original: false,
                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: channel };
   const query = qs.stringify(message);
   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -195,6 +221,27 @@ const createComment = function(event, data, token, callback, done) {
   }`;
   
   executeMutation(mutationQuery, { text: text, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
+}
+
+const addTranslation = function(event, data, token, callback, done) {
+  const pmid = data.object_id.toString(),
+        text = event.text;
+
+  const setFields = JSON.stringify({
+    translation_text: text,
+    translation_language: data.mode.replace(/^add_translation_/, ''),
+    translation_note: '', // FIXME: Support translation note
+  });
+
+  const mutationQuery = `($setFields: String!, $pmid: String!, $clientMutationId: String!) {
+    createDynamic: createDynamic(input: { clientMutationId: $clientMutationId, set_fields: $setFields, annotated_id: $pmid, annotated_type: "ProjectMedia", annotation_type: "translation" }) {
+      project_media {
+        dbid
+      }
+    }
+  }`;
+  
+  executeMutation(mutationQuery, { setFields: setFields, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
 }
 
 const storeSlackMessage = function(event, callback) {
@@ -239,6 +286,7 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
         tasks_count
         project {
           title
+          get_languages
         }
         tags {
           edges {
@@ -260,6 +308,8 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
           slug
         }
         verification_statuses
+        translation_statuses
+        target_languages
       }
     }
   }`;

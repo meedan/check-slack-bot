@@ -14,7 +14,7 @@ const {
   sendAction
 } = require('./test-helpers');
 
-jest.setTimeout(10000);
+jest.setTimeout(120000);
 
 test('verify call if team is in config', () => {
   const data = buildData('123456abcdef', 'url_verification');
@@ -85,22 +85,23 @@ test('identify Slack user and handle change_status command', async () => {
   const project = await callCheckApi('project', { team_id: team.data.dbid });
   let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,last_status_obj,last_status' });
-  const st = await callCheckApi('get', { class: 'status', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
+  const st = await callCheckApi('get', { class: 'dynamic', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
   const callback_id = { last_status_id: st.data.graphql_id, team_slug: team.data.slug };
 
-  expect(pm.data.last_status).toBe('undetermined');
-  const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
+  let es = config.appName === 'check' ? 'undetermined' : 'pending';
+  expect(pm.data.last_status).toBe(es);
+  const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'in_progress' }] }, callback_id);
   expect(outputData).not.toMatch('Error');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: [expect.objectContaining({ title: expect.stringContaining('VERIFIED: Media Title') })] }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: [expect.objectContaining({ title: expect.stringContaining('IN PROGRESS: Media Title') })] }));
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'last_status' });
-  expect(pm.data.last_status).toBe('verified');
+  expect(pm.data.last_status).toBe('in_progress');
 });
 
 test('identify Slack user and return error if user cannot run the change_status command', async () => {
   const callback_id = { last_status_id: 'xyz123', team_slug: 'test' };
   const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
   expect(outputData).toMatch('Error when executing mutation');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('continue directly from Check: Test') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('continue directly from there: Test') }));
 });
 
 test('identify Slack user and handle add_comment command', async () => {
@@ -109,6 +110,14 @@ test('identify Slack user and handle add_comment command', async () => {
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Saved Redis');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
+});
+
+test('identify Slack user and handle add_translation command', async () => {
+  const callback_id = {};
+  const { outputData, callback } = await sendAction({ name: 'add_translation', selected_options: [{ value: 'en' }] }, callback_id);
+  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
+  expect(outputData).toMatch('Saved Redis');
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your translation') }));
 });
 
 test('identify Slack user and handle edit title command', async () => {

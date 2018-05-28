@@ -1,4 +1,5 @@
 const config = {
+  appName: 'check',
   checkApi: {
     url: 'http://api.test:13000',
     apiKey: 'testkey',

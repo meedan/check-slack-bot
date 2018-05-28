@@ -1,4 +1,5 @@
 const config = {
+  appName: 'check', // Or bridge
   checkApi: {
     url: 'http://localhost:3000',
     apiKey: 'dev',

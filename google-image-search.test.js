@@ -8,7 +8,7 @@ const {
   sendAction
 } = require('./test-helpers.js');
 
-jest.setTimeout(10000);
+jest.setTimeout(120000);
 
 test('search for image', async () => {
   let outputData = '';

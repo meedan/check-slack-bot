@@ -8,24 +8,30 @@ let VERIFICATION_TOKEN = null,
 const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig } = require('./helpers.js');
 
 const sendErrorMessage = function(callback, thread, channel, link) {
-  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ': ' + link });
+  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ': ' + link });
 };
 
 const error = function(data, callback) {
-  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_Check_and_login_by_your_Slack_user,_or_continue_directly_from_Check') + ': ' + data.original_message.attachments[0].title_link });
+  callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ': ' + data.original_message.attachments[0].title_link });
 };
 
 const changeStatus = function(data, token, callback) {
   const value = JSON.parse(data.callback_id);
+
+  const status = data.actions[0].selected_options[0].value;
+  const mapping = { check: 'verification_status_status', bridge: 'translation_status_status' };
+  let fields = {};
+  fields[mapping[config.appName]] = status;
+  const setFields = JSON.stringify(fields)
   
   const vars = {
     id: value.last_status_id,
-    status: data.actions[0].selected_options[0].value,
+    setFields: setFields,
     clientMutationId: `fromSlackMessage:${data.message_ts}`
   };
 
-  const mutationQuery = `($status: String!, $id: ID!, $clientMutationId: String!) {
-    updateStatus: updateStatus(input: { clientMutationId: $clientMutationId, id: $id, status: $status }) {
+  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
+    updateDynamic: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
       project_media {
         id
         dbid
@@ -40,6 +46,7 @@ const changeStatus = function(data, token, callback) {
         tasks_count
         project {
           title
+          get_languages
         }
         tags {
           edges {
@@ -61,6 +68,8 @@ const changeStatus = function(data, token, callback) {
           slug
         }
         verification_statuses
+        translation_statuses
+        target_languages
       }
     }
   }`;
@@ -69,7 +78,7 @@ const changeStatus = function(data, token, callback) {
   data.team_slug = value.team_slug;
 
   const done = function(resp) {
-    const obj = resp.updateStatus.project_media;
+    const obj = resp.updateDynamic.project_media;
     obj.metadata = JSON.parse(obj.metadata);
     const json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: formatMessageFromData(obj) };
     callback(null, json);
@@ -128,6 +137,30 @@ const addComment = function(data, token, callback) {
   };
 
   saveToRedisAndReplyToSlack(data, token, callback, 'comment', newMessage, attachments);
+};
+
+const addTranslation = function(data, token, callback, language) {
+  const newMessage = t('type_your_translation_below') + ' (' + language.value + ')';
+
+  let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
+  attachments[0].actions[1] = {
+    name: 'add_comment',
+    text: t('add_comment', true),
+    type: 'button',
+    style: 'primary'
+  };
+  attachments[0].actions[2] = {
+    name: 'edit',
+    text: t('edit', true),
+    type: 'select',
+    options: [
+      { text: t('title'), value: 'title' },
+      { text: t('description'), value: 'description' }
+    ],
+    style: 'primary'
+  };
+
+  saveToRedisAndReplyToSlack(data, token, callback, 'add_translation_' + language.value, newMessage, attachments);
 };
 
 const editTitle = function(data, token, callback) {
@@ -230,6 +263,10 @@ const process = function(data, callback, context) {
             break;
           case 'add_comment':
             addComment(data, token, callback);
+            break;
+          case 'add_translation':
+            const language = data.actions[0].selected_options[0];
+            addTranslation(data, token, callback, language);
             break;
           case 'type_comment':
             callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_comment_inside_the_thread_above') });

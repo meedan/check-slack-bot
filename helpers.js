@@ -33,7 +33,8 @@ const formatMessageFromData = function(data) {
 
   let statusColor = '#cccccc';
   let statusLabel = data.last_status;
-  const statuses = data.verification_statuses;
+  const mapping = { check: 'verification_statuses', bridge: 'translation_statuses' };
+  const statuses = data[mapping[config.appName]];
   let options = [];
   statuses.statuses.forEach(function(st) {
     if (st.id === data.last_status) {
@@ -41,6 +42,18 @@ const formatMessageFromData = function(data) {
       statusLabel = st.label;
     }
     options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_'), true), value: st.id });
+  });
+
+  // Build a list of languages
+
+  let languages = [];
+  const languagesJson = JSON.parse(data.target_languages);
+  let projectLanguages = ['en'];
+  if (data.project.get_languages) {
+    projectLanguages = JSON.parse(data.project.get_languages);
+  }
+  projectLanguages.forEach(function(code) {
+    languages.push({ text: languagesJson[code], value: code });
   });
 
   // Formats the fields to be displayed on the Slack card
@@ -52,7 +65,7 @@ const formatMessageFromData = function(data) {
       short: true
     },
     {
-      title: t('added_to_check', true),
+      title: t('added_to_' + config.appName, true),
       value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
       short: true
     },
@@ -107,6 +120,16 @@ const formatMessageFromData = function(data) {
       ]
     }
   ];
+
+  if (config.appName === 'bridge') {
+    actions.push({
+      name: 'add_translation',
+      text: t('add_translation', true),
+      type: 'select',
+      style: 'primary',
+      options: languages
+    });
+  }
 
   if (data.metadata.picture && /^http/.test(data.metadata.picture)) {
     actions.push({
@@ -214,13 +237,11 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
 
   client.mutate(mutationQuery, vars)
   .then(function(resp, err) {
-    if (!err && resp) {
-      done(resp);
-    }
-    else {
-      console.log('Error when executing mutation: ' + util.inspect(err));
-      fail(callback, thread, channel, data.link);
-    }
+    done(resp);
+  })
+  .catch(function(e) {
+    console.log('Error when executing mutation: ' + util.inspect(e));
+    fail(callback, thread, channel, data.link);
   });
 };
 
