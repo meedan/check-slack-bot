@@ -132,9 +132,9 @@ const process = function(event, callback) {
       else {
         const data = JSON.parse(reply.toString());
 
-        // Adding comment or changing title or changing description or adding translation
+        // Adding comment or changing title or changing description or adding translation or marking a translation as error
 
-        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description' || /^add_translation_/.test(data.mode))) {
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description' || /^add_translation_/.test(data.mode) || data.mode === 'translation_error')) {
 
           getCheckSlackUser(event.user,
             
@@ -163,6 +163,27 @@ const process = function(event, callback) {
                   const message = { text: t('your_translation_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   const query = qs.stringify(message);
+                  https.get('https://slack.com/api/chat.postMessage?' + query);
+                });
+              }
+
+              // Marking translation as error
+
+              else if (data.mode === 'translation_error') {
+                markTranslationAsError(event, data, token, callback, function(resp) {
+                  const obj = resp.updateDynamic.project_media;
+                  obj.metadata = JSON.parse(obj.metadata);
+                  
+                  let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
+                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
+
+                  request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
+                    console.log('Response from Slack message update: ' + res);
+                  });
+
+                  message = { text: t('translation_marked_as_error'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                              response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                  query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
                 });
               }
@@ -325,6 +346,64 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
 
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 }
+
+const markTranslationAsError = function(event, data, token, callback, done) {
+  const setFields = JSON.stringify({ translation_status_status: 'error', translation_status_note: event.text });
+  
+  const vars = {
+    id: data.last_status_id,
+    setFields: setFields,
+    clientMutationId: `fromSlackMessage:${event.thread_ts}`
+  };
+
+  console.log('ID is ' + vars.id);
+
+  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
+    updateDynamic: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
+      project_media {
+        id
+        dbid
+        metadata
+        last_status
+        last_status_obj {
+          id
+        }
+        log_count
+        created_at
+        updated_at
+        tasks_count
+        project {
+          title
+          get_languages
+        }
+        tags {
+          edges {
+            node {
+              tag
+            }
+          }
+        }
+        author_role
+        user {
+          name
+          profile_image
+          source {
+            image
+          }
+        }
+        team {
+          name
+          slug
+        }
+        verification_statuses
+        translation_statuses
+        target_languages
+      }
+    }
+  }`;
+
+  executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
+};
 
 exports.handler = function(data, context, callback) {
   switch (data.type) {

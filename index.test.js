@@ -1,4 +1,5 @@
 const { exec } = require('child_process');
+const btoa = require('btoa');
 let config = require('./config');
 const index = require('./index');
 const {
@@ -169,6 +170,46 @@ test('identify Slack user and create translation', async () => {
 
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'annotations' });
   expect(pm.data.annotations.length).toBeGreaterThan(n);
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('identify Slack user and mark translation request as error', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
+  await sleep(1);
+
+  const uuid = buildRandomString();
+  const token = buildRandomString();
+  const email = buildRandomString() + '@test.com';
+  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,graphql_id,last_translation_status_obj' });
+
+  const thread_ts = new Date().getTime();
+  const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
+  const value = JSON.stringify({ mode: 'translation_error', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, last_status_id: btoa('Dynamic/' + pm.data.last_translation_status_obj.id) });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const event = { channel: 'test', thread_ts, user: uuid, text: 'Test' };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,last_translation_status' });
+  expect(pm.data.last_translation_status).toBe('pending');
+
+  index.handler(data, null, callback);
+  await sleep(10);
+  expect(outputData).not.toMatch('Error when trying to identify Slack user');
+  
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,last_translation_status' });
+  expect(pm.data.last_translation_status).toBe('error');
   expect(callback).toHaveBeenCalledWith(null);
 });
 

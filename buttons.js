@@ -83,7 +83,7 @@ const changeStatus = function(data, token, callback) {
     const json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: formatMessageFromData(obj) };
     callback(null, json);
   };
-  
+
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, {}, data);
 };
 
@@ -92,7 +92,7 @@ const saveToRedisAndReplyToSlack = function(data, token, callback, mode, newMess
   const redis = getRedisClient();
   
   redis.on('connect', function() {
-    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id }), function() {
+    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id, last_status_id: value.last_status_id }), function() {
       let json = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
       callback(null, json);
 
@@ -137,6 +137,30 @@ const addComment = function(data, token, callback) {
   };
 
   saveToRedisAndReplyToSlack(data, token, callback, 'comment', newMessage, attachments);
+};
+
+const markTranslationAsError = function(data, token, callback) {
+  const newMessage = t('please_provide_a_reason');
+
+  let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
+  attachments[0].actions[1] = {
+    name: 'add_comment',
+    text: t('add_comment', true),
+    type: 'button',
+    style: 'primary'
+  };
+  attachments[0].actions[2] = {
+    name: 'edit',
+    text: t('edit', true),
+    type: 'select',
+    options: [
+      { text: t('title'), value: 'title' },
+      { text: t('description'), value: 'description' }
+    ],
+    style: 'primary'
+  };
+
+  saveToRedisAndReplyToSlack(data, token, callback, 'translation_error', newMessage, attachments);
 };
 
 const addTranslation = function(data, token, callback, language) {
@@ -259,7 +283,13 @@ const process = function(data, callback, context) {
 
         switch (data.actions[0].name) {
           case 'change_status':
-            changeStatus(data, token, callback);
+            const status = data.actions[0].selected_options[0].value;
+            if (config.appName === 'bridge' && status === 'error') {
+              markTranslationAsError(data, token, callback);
+            }
+            else {
+              changeStatus(data, token, callback);
+            }
             break;
           case 'add_comment':
             addComment(data, token, callback);
