@@ -261,6 +261,10 @@ const saveToRedisAndReplyToSlack = function(redisKey, value, message, done, call
   });
 };
 
+const projectMediaCreatedMessage = function() {
+  return 'URL successfully added to ' + config.appName + ': ';
+};
+
 module.exports = {
   t,
   formatMessageFromData,
@@ -270,5 +274,6 @@ module.exports = {
   verify,
   executeMutation,
   getTeamConfig,
-  saveToRedisAndReplyToSlack
+  saveToRedisAndReplyToSlack,
+  projectMediaCreatedMessage
 };

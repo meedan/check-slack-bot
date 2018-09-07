@@ -6,7 +6,7 @@ const config = require('./config.js'),
       qs = require('querystring'),
       https = require('https');
 
-const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack } = require('./helpers.js');
+const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, projectMediaCreatedMessage } = require('./helpers.js');
 
 const replyToSlack = function(team, responseUrl, message, callback) {
   request.post({ url: responseUrl, json: true, body: message, headers: { 'Content-type': 'application/json' } }, function(err, res, resjson) {
@@ -75,7 +75,7 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
   const done = function(resp) {
     console.log('GraphQL query response: ' + util.inspect(resp));
     const metadata = JSON.parse(resp.createProjectMedia.project_media.metadata);
-    let message = { response_type: "ephemeral", text: 'URL successfully added to ' + config.appName + ': ' + metadata.permalink };
+    let message = { response_type: "ephemeral", text: projectMediaCreatedMessage() + metadata.permalink };
     replyToSlack(team_id, responseUrl, message, callback);
     callback(null, message);
   };

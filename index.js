@@ -5,7 +5,7 @@ const config = require('./config.js'),
       util = require('util');
 let ACCESS_TOKEN = null;
       
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage } = require('./helpers.js');
 
 const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, done) {
   const client = getGraphqlClient(teamSlug, config.checkApi.apiKey, callback);
@@ -69,10 +69,10 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 const process = function(event, callback) {
   const mainRegexp = new RegExp(config.checkWeb.url, 'g');
   const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
+  const botCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
 
   // This message contains a Check URL to be parsed
-
-  if (!event.bot_id && mainRegexp.test(event.text)) {
+  if ((!event.bot_id && mainRegexp.test(event.text)) || (byBot = botCreatedPMRegexp.test(event.text) && mainRegexp.test(event.text))) {
     while (matches = regexp.exec(event.text)) {
       const teamSlug = matches[1],
             projectId = matches[2],
