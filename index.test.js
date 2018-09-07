@@ -301,7 +301,7 @@ test('parse Slack message with Check URL posted by bot', async () => {
   const url = 'https://ca.ios.ba/'
   let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
 
-  const event = { channel: 'test', bot_id: 'abc', text: `URL successfully added to ' + config.appName + ': http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}` };
+  const event = { channel: 'test', bot_id: 'abc', text: `URL successfully added to ${config.appName}: http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}` };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
