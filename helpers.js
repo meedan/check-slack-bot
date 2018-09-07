@@ -241,12 +241,24 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
   })
   .catch(function(e) {
     console.log('Error when executing mutation: ' + util.inspect(e));
-    fail(callback, thread, channel, data.link);
+    fail(callback, thread, channel, data.link, e);
   });
 };
 
 const getTeamConfig = function(slackTeamId) {
   return config.slack[slackTeamId] || {};
+};
+
+const saveToRedisAndReplyToSlack = function(redisKey, value, message, done, callback) {
+  const redis = getRedisClient();
+  redis.on('connect', function() {
+    redis.set(redisKey, JSON.stringify(value), function(resp) {
+      console.log('Saved on Redis key (' + redisKey + ') :' + util.inspect(value));
+      callback(null, message);
+      done();
+      redis.quit();
+    });
+  });
 };
 
 module.exports = {
@@ -257,5 +269,6 @@ module.exports = {
   getCheckSlackUser,
   verify,
   executeMutation,
-  getTeamConfig
+  getTeamConfig,
+  saveToRedisAndReplyToSlack
 };
