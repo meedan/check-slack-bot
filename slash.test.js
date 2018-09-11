@@ -46,7 +46,7 @@ test('verify url and project on call', async () => {
 
   slash.handler(data, null, callback);
   await sleep(3);
-  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Sending URL to check'));
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Sending URL to Check'));
 });
 
 test('verify set and valid check link on call', async () => {
@@ -61,7 +61,7 @@ test('verify set and valid check link on call', async () => {
 
   slash.handler(data, null, callback);
   await sleep(3);
-  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Setting project'));
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Setting project...'));
 });
 
 test('verify set and invalid check link on call', async () => {
@@ -76,7 +76,7 @@ test('verify set and invalid check link on call', async () => {
 
   slash.handler(data, null, callback);
   await sleep(3);
-  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Invalid project URL'));
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Invalid project URL: ' + projectUrl));
 });
 
 test('verify show on call', async () => {

@@ -72,7 +72,7 @@ const process = function(event, callback) {
   const botCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
 
   // This message contains a Check URL to be parsed
-  if ((!event.bot_id && mainRegexp.test(event.text)) || (byBot = botCreatedPMRegexp.test(event.text) && mainRegexp.test(event.text))) {
+  if (mainRegexp.test(event.text) && ((event.bot_id !== config.bot_id) || (event.bot_id === config.bot_id && botCreatedPMRegexp.test(event.text)))) {
     while (matches = regexp.exec(event.text)) {
       const teamSlug = matches[1],
             projectId = matches[2],

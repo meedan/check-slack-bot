@@ -14,7 +14,7 @@ const config = require('./config.js'),
       qs = require('querystring'),
       aws = require('aws-sdk');
 
-const { getCheckSlackUser, t, getTeamConfig } = require('./helpers.js');
+const { getCheckSlackUser, t, getTeamConfig, humanAppName } = require('./helpers.js');
 
 const permissionError = function(callback) {
   callback(null, t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ': ' + config.checkWeb.url );
@@ -29,14 +29,14 @@ const process = function(body, token, callback) {
   if (projectUrl = setProjectRegexp.exec(body.text)) {
     const projectRegexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)', 'g');
       if (matches = projectRegexp.exec(projectUrl[1])) {
-        text = 'Setting project...';
+        text = t('setting_project...');
         action = 'setProject';
-      } else { text = 'Invalid project URL: ' + projectUrl[1]; }
+      } else { text = t('invalid_project_URL') + ': ' + projectUrl[1]; }
   } else if (matches = showProjectRegexp.exec(body.text)) {
-    text = 'Getting project...';
+    text = t('getting_project...');
     action = 'showProject';
   } else if (matches = addUrlRegexp.exec(body.text)) {
-    text = 'Sending URL to ' + config.appName + ': ' + matches[1];
+    text = t('sending_URL_to') + ' ' + humanAppName() + ': ' + matches[1];
     action = 'createProjectMedia';
   } else {
     text = '';

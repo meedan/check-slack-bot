@@ -6,7 +6,7 @@ const config = require('./config.js'),
       qs = require('querystring'),
       https = require('https');
 
-const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, projectMediaCreatedMessage } = require('./helpers.js');
+const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, projectMediaCreatedMessage, humanAppName } = require('./helpers.js');
 
 const replyToSlack = function(team, responseUrl, message, callback) {
   request.post({ url: responseUrl, json: true, body: message, headers: { 'Content-type': 'application/json' } }, function(err, res, resjson) {
@@ -44,11 +44,13 @@ const getProject = function(teamSlug, projectId, token, done, fail, callback) {
 const sendErrorMessage = function(e, vars, text, team_id, responseUrl, callback) {
   const message = { response_type: "ephemeral", text: text };
   if (e.rawError) {
+    let error_message = e.rawError[0].message;
+    if (e.rawError[0].data.code === 'ERR_OBJECT_EXISTS') { error_message += ': ' + e.rawError[0].data.url; };
     message.attachments = [{
       color: 'warning',
-      text: e.rawError[0].message,
+      text: error_message,
       footer: vars.url,
-      fallback: e.rawError[0].message
+      fallback: error_message
     }]
   };
   console.log('Error: ' + util.inspect(e));
@@ -68,14 +70,14 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
   }`;
 
   const fail = function(callback, thread, channel, link, e) {
-    const text = "Sorry, can't add the URL" + link;
+    const text = t("sorry,_can't_add_the_URL") + ' ' + link;
     sendErrorMessage(e, vars, text, team_id, responseUrl, callback);
   };
 
   const done = function(resp) {
     console.log('GraphQL query response: ' + util.inspect(resp));
     const metadata = JSON.parse(resp.createProjectMedia.project_media.metadata);
-    let message = { response_type: "ephemeral", text: projectMediaCreatedMessage() + metadata.permalink };
+    let message = { response_type: "in_channel", text: projectMediaCreatedMessage() + metadata.permalink };
     replyToSlack(team_id, responseUrl, message, callback);
     callback(null, message);
   };
@@ -92,7 +94,7 @@ const addUrl = function(payload, callback) {
   redis.get(REDIS_KEY, function(err, reply) {
     if (!reply) {
       console.log('Could not find Redis key for channel' + ' #' + payload.body.channel_name);
-      let message = { text: 'Default project not defined for this channel', response_type: 'ephemeral' };
+      let message = { text: t('default_project_not_defined_for_this_channel'), response_type: 'ephemeral' };
       replyToSlack(team_id, responseUrl, message, callback);
     }
     else {
@@ -103,7 +105,7 @@ const addUrl = function(payload, callback) {
     }
     redis.quit();
   });
-  console.log('Add URL to ' + config.appName + ': ' + url);
+  console.log('Add URL to ' + humanAppName() + ': ' + url);
 };
 
 const setProject = function(payload, callback) {
@@ -112,14 +114,14 @@ const setProject = function(payload, callback) {
         projectId = payload.matches[2];
 
   const fail = function(e) {
-    const text = "Sorry, can't find project " + projectUrl;
+    const text = t("sorry,_can't_find_project") + ' ' + projectUrl;
     const vars = { url: projectUrl };
     sendErrorMessage(e, vars, text, payload.body.team_id, payload.body.response_url, callback);
   };
 
   const done = function(data) {
     const value = { team_slug: teamSlug, project_id: data.project.dbid, project_title: data.project.title, project_url: payload.matches[0]};
-    const message = { text: 'Project set: ' + value['project_url'], response_type: 'ephemeral' };
+    const message = { text: t('project_set') + ': ' + value['project_url'], response_type: 'ephemeral' };
 
     const success = function() {
       replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
@@ -140,11 +142,11 @@ const showProject = function(payload, callback) {
     redis.get(REDIS_KEY, function(err, reply) {
       if (!reply) {
         console.log('Could not find Redis key for channel' + ' #' + payload.body.channel_name);
-        message = { text: 'Default project not defined for this channel', response_type: 'ephemeral' };
+        message = { text: t('default_project_not_defined_for_this_channel'), response_type: 'ephemeral' };
       }
       else {
         const data = JSON.parse(reply.toString());
-        message = { text: 'Project set to channel: ' + data.project_url, response_type: 'ephemeral' };
+        message = { text: t('project_set_to_channel') + ': ' + data.project_url, response_type: 'ephemeral' };
       }
       replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
     });
@@ -155,29 +157,28 @@ const showProject = function(payload, callback) {
 const showTips = function(payload, callback) {
   let message = {
     response_type: 'ephemeral',
-    text: ":wave: Need some help with `/" + config.appName + "`?",
+    text: ':wave: ' + t('need_some_help_with') + ' ` /' + config.appName + '`?',
     attachments: [
       {
-        text: "Define the default project for this channel:\n `/" + config.appName + " " + config.checkWeb.url + "/[team slug]/project/[project id]`",
+        text: t('define_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`',
         mrkdwn_in: ['text'],
-        fallback: "Define the default project for this channel:\n `/" + config.appName + " set " + config.checkWeb.url + "/[team slug]/project/[project id]`"
+        fallback: t('define_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`'
       },
       {
-        text: "Show the default project for this channel:\n `/" + config.appName + " show`",
+        text: t('show_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' show`',
         mrkdwn_in: ['text'],
-        fallback: "Show the default project for this channel:\n `/" + config.appName + " show`"
+        fallback: t('show_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' show`'
       },
       {
-        text: "Send a URL to " + config.appName + ". A default project for this channel must be already defined:\n `/" + config.appName + " [URL]`",
+        text: t('send_a_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `/' + config.appName + ' [URL]`',
         mrkdwn_in: ['text'],
-        fallback: "Send the URL to " + config.appName + ". A default project for this channel must be already defined:\n `/" + config.appName + " [URL]`"
+        fallback: t('send_the_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `/' + config.appName + ' [URL]`'
       }]
   };
   replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
 };
 
 exports.handler = function(event, context, callback) {
-  console.log('Data received: ' + util.inspect(event));
   REDIS_KEY = 'slack_channel_project:' + config.redisPrefix + ':' + event.body.channel_id;
   switch (event.type) {
     case 'createProjectMedia':

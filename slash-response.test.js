@@ -70,7 +70,7 @@ test('call add url if type is createProjectMedia', () => {
   console['log'] = jest.fn(storeLog);
 
   sr.handler(data, null, callback);
-  expect(outputData).toMatch('Add URL to check: ' + url);
+  expect(outputData).toMatch('Add URL to Check: ' + url);
 });
 
 test('call set project if type is setProject', () => {
@@ -151,18 +151,18 @@ test('successfully add url', async () => {
   sr.handler(data, null, callback);
   await sleep(8);
 
-  expect(outputData).toMatch('Add URL to check: ' + url);
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('URL successfully added to check') }));
+  expect(outputData).toMatch('Add URL to Check: ' + url);
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('URL successfully added to Check') }));
 });
 
-test('return error message if duplicated url', async () => {
+test('return error message if duplicated url and its url', async () => {
   const response = await projectData();
   await sendToRedis(response, 'the-channel');
 
   const url = 'https://ca.ios.ba/'
 
   let pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
-  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,graphql_id' });
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'metadata' });
 
   const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
@@ -171,7 +171,7 @@ test('return error message if duplicated url', async () => {
   await sleep(8);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists'})])}));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.metadata).permalink + 'd'})])}));
 });
 
 test('return error message when try to show project but not defined on channel', async () => {
