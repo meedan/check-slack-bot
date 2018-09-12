@@ -66,13 +66,27 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   });
 };
 
+const displayCard = function(checkURLPattern, bot_id, text) {
+  if (!text) { return false }
+  const botCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
+  const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
+  switch(bot_id) {
+    case undefined:
+      return true;
+    case config.bot_id:
+      return botCreatedPMRegexp.test(text)
+    default:
+      return urlFromBotRegexp.test(text)
+  }
+};
+
 const process = function(event, callback) {
   const mainRegexp = new RegExp(config.checkWeb.url, 'g');
-  const regexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)', 'g');
-  const botCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
+  const checkURLPattern = config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)';
+  const regexp = new RegExp(checkURLPattern, 'g');
 
   // This message contains a Check URL to be parsed
-  if (mainRegexp.test(event.text) && ((event.bot_id !== config.bot_id) || (event.bot_id === config.bot_id && botCreatedPMRegexp.test(event.text)))) {
+  if (displayCard(checkURLPattern, event.bot_id, event.text)) {
     while (matches = regexp.exec(event.text)) {
       const teamSlug = matches[1],
             projectId = matches[2],
