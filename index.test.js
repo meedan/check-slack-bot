@@ -9,6 +9,8 @@ const {
   sendAction
 } = require('./test-helpers.js');
 
+const { humanAppName } = require('./helpers');
+
 jest.setTimeout(120000);
 
 const buildData = (token, type, event) => {
@@ -286,6 +288,49 @@ test('parse Slack message with bot message', async () => {
 
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'annotations' });
   expect(pm.data.annotations.length).toBeGreaterThan(n);
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('parse Slack message with Check URL posted by slash bot', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const url = 'https://ca.ios.ba/'
+  let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
+
+  const event = { channel: 'test', bot_id: config.bot_id, text: `URL successfully added to ${humanAppName()}: <http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}>` };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Slack response status code: 200');
+  expect(outputData).toMatch('GraphQL query response');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('ignore Slack message with Check URL and `|` posted by bot', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { is_admin: true });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const url = 'https://ca.ios.ba/'
+  let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
+
+  const event = { channel: 'test', bot_id: 'abc', text: `*John* answered task <http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}|Agree?> in *Doe Project*: \n&gt;No\n` };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toBe('');
   expect(callback).toHaveBeenCalledWith(null);
 });
 
