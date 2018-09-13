@@ -163,3 +163,23 @@ test('return error if Slack user cannot be identified', async () => {
   expect(outputData).toMatch('Error when trying to identify Slack user');
   expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('do not have the permission'));
 });
+
+test('call slash-response by default when not present on config', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const functionName = config.slashResponseFunctionName;
+  config.slashResponseFunctionName = false;
+
+  const user = await apiData();
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=help"};
+
+  const callback = jest.fn();
+  awsMock.mock('Lambda', 'invoke', function({}) { console.log('AWS Mocked Method'); });
+  slash.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('AWS Mocked Method');
+  expect(callback).toHaveBeenCalledWith(null, '');
+  config.slashResponseFunctionName = functionName;
+});
