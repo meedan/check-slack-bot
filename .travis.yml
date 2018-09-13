@@ -38,6 +38,14 @@ before_install:
 - sudo service elasticsearch restart
 - sleep 15
 - sudo service elasticsearch status
+- git clone https://github.com/meedan/pender.git
+- d=configurator/check/travis/pender/; for f in $(find $d -type f); do cp "$f" "pender/${f/$d/}"; done
+- cd pender
+- bundle install --path=/tmp/bundler
+- bundle exec rake db:migrate
+- bundle exec rails runner 'a = ApiKey.create!; a.access_token = "test"; a.save!'
+- bundle exec rails s -p 3005 >/dev/null &
+- cd -
 - git clone https://github.com/meedan/check-api.git
 - d=configurator/check/travis/check-api/; for f in $(find $d -type f); do cp "$f" "check-api/${f/$d/}"; done
 - cd check-api

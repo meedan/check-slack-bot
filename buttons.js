@@ -5,7 +5,7 @@ const config = require('./config.js'),
 let VERIFICATION_TOKEN = null,
     ACCESS_TOKEN = null;
 
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack } = require('./helpers.js');
 
 const sendErrorMessage = function(callback, thread, channel, link) {
   callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ': ' + link });
@@ -87,32 +87,28 @@ const changeStatus = function(data, token, callback) {
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, {}, data);
 };
 
-const saveToRedisAndReplyToSlack = function(data, token, callback, mode, newMessage, attachments) {
+const saveAndReply = function(data, token, callback, mode, newMessage, attachments) {
   const value = JSON.parse(data.callback_id);
-  const redis = getRedisClient();
-  
-  redis.on('connect', function() {
-    redis.set('slack_message_ts:' + config.redisPrefix + ':' + data.message_ts, JSON.stringify({ mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id, last_status_id: value.last_status_id }), function() {
-      let json = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
-      callback(null, json);
+  const redisKey = 'slack_message_ts:' + config.redisPrefix + ':' + data.message_ts;
+	const storedData = { mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id, last_status_id: value.last_status_id };
+  let message = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
 
-      json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
+  const success = function() {
+    json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
       
-      const options = {
-        uri: data.response_url,
-        method: 'POST',
-        json: json
-      };
+    const options = {
+      uri: data.response_url,
+      method: 'POST',
+      json: json
+    };
 
-      request(options, function(err, response, body) {
-        console.log('Output from delayed response: ' + body);
-      });
-    
-      console.log('Saved Redis key slack_message_ts:' + data.message_ts);
-      
-      redis.quit();
+    request(options, function(err, response, body) {
+      console.log('Output from delayed response: ' + body);
     });
-  });
+
+    console.log('Saved Redis key slack_message_ts:' + data.message_ts);
+  };
+  saveToRedisAndReplyToSlack(redisKey, storedData, message, success, callback);
 };
 
 const addComment = function(data, token, callback) {
@@ -136,7 +132,7 @@ const addComment = function(data, token, callback) {
     style: 'primary'
   };
 
-  saveToRedisAndReplyToSlack(data, token, callback, 'comment', newMessage, attachments);
+  saveAndReply(data, token, callback, 'comment', newMessage, attachments);
 };
 
 const markTranslationAsError = function(data, token, callback) {
@@ -160,7 +156,7 @@ const markTranslationAsError = function(data, token, callback) {
     style: 'primary'
   };
 
-  saveToRedisAndReplyToSlack(data, token, callback, 'translation_error', newMessage, attachments);
+  saveAndReply(data, token, callback, 'translation_error', newMessage, attachments);
 };
 
 const addTranslation = function(data, token, callback, language) {
@@ -184,7 +180,7 @@ const addTranslation = function(data, token, callback, language) {
     style: 'primary'
   };
 
-  saveToRedisAndReplyToSlack(data, token, callback, 'add_translation_' + language.value, newMessage, attachments);
+  saveAndReply(data, token, callback, 'add_translation_' + language.value, newMessage, attachments);
 };
 
 const editTitle = function(data, token, callback) {
@@ -211,7 +207,7 @@ const editTitle = function(data, token, callback) {
     style: 'primary'
   };
   
-  saveToRedisAndReplyToSlack(data, token, callback, 'edit_title', newMessage, attachments);
+  saveAndReply(data, token, callback, 'edit_title', newMessage, attachments);
 };
 
 const editDescription = function(data, token, callback) {
@@ -238,7 +234,7 @@ const editDescription = function(data, token, callback) {
     style: 'primary'
   };
   
-  saveToRedisAndReplyToSlack(data, token, callback, 'edit_description', newMessage, attachments);
+  saveAndReply(data, token, callback, 'edit_description', newMessage, attachments);
 };
 
 const imageSearch = function(data, callback, context) {
