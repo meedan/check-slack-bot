@@ -68,13 +68,13 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 
 const displayCard = function(checkURLPattern, bot_id, text) {
   if (!text) { return false }
-  const botCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
+  const slashBotCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
   const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
   switch(bot_id) {
     case undefined:
       return true;
     case config.bot_id:
-      return botCreatedPMRegexp.test(text)
+      return slashBotCreatedPMRegexp.test(text)
     default:
       return urlFromBotRegexp.test(text)
   }

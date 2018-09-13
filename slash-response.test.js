@@ -167,11 +167,30 @@ test('return error message if duplicated url and its url', async () => {
   const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
 
+  sr.handler(data, null, callback);
+  await sleep(8);
+
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.metadata).permalink})])}));
+});
+
+test('return error message if project is archived', async () => {
+  const response = await projectData();
+  await sendToRedis(response, 'the-channel');
+
+  const url = 'https://ca.ios.ba/'
+
+  const pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
+  await callCheckApi('archive_project', { project_id: pm.data.project_id });
+
+  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', 'https://meedan.com/en', response.project.data.dbid], user_token: response.user.data.token};
+  const callback = jest.fn();
+
 	sr.handler(data, null, callback);
   await sleep(8);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.metadata).permalink + 'd'})])}));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: expect.stringContaining('Validation failed')})])}));
 });
 
 test('return error message when try to show project but not defined on channel', async () => {

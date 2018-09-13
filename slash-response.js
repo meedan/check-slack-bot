@@ -43,9 +43,10 @@ const getProject = function(teamSlug, projectId, token, done, fail, callback) {
 
 const sendErrorMessage = function(e, vars, text, team_id, responseUrl, callback) {
   const message = { response_type: "ephemeral", text: text };
-  if (e.rawError) {
-    let error_message = e.rawError[0].message;
-    if (e.rawError[0].data.code === 'ERR_OBJECT_EXISTS') { error_message += ': ' + e.rawError[0].data.url; };
+  if (e.rawError && (error = e.rawError[0])) {
+    let error_message = error.message;
+    if (error.data && error.data.code === 'ERR_OBJECT_EXISTS') { error_message += ': ' + error.data.url; };
+
     message.attachments = [{
       color: 'warning',
       text: error_message,
