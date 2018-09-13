@@ -66,14 +66,14 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   });
 };
 
-const displayCard = function(checkURLPattern, bot_id, text) {
+const displayCard = function(checkURLPattern, botId, text) {
   if (!text) { return false }
   const slashBotCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
   const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
-  switch(bot_id) {
+  switch(botId) {
     case undefined:
       return true;
-    case config.bot_id:
+    case config.botId:
       return slashBotCreatedPMRegexp.test(text)
     default:
       return urlFromBotRegexp.test(text)
