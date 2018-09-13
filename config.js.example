@@ -20,6 +20,6 @@ const config = {
   awsRegion: 'us-east-1',
   googleImageSearchFunctionName: 'if not provided, defaults to "google-image-search"',
   slashResponseFunctionName: 'if not provided, defaults to "slash-response"',
-  bot_id: 'BOTID'
+  botId: 'BOTID'
 };
 module.exports = config;
