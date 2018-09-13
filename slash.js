@@ -22,7 +22,7 @@ const permissionError = function(callback) {
 
 const process = function(body, token, callback) {
   const setProjectRegexp = new RegExp(/set <(.+)>/, 'g');
-  const showProjectRegexp = new RegExp(/show/, 'g');
+  const showProjectRegexp = new RegExp(/^show/, 'g');
   const addUrlRegexp = new RegExp(/<(.+)>/, 'g');
 
   let action = '';
@@ -47,7 +47,8 @@ const process = function(body, token, callback) {
     const payload = { type: action, body: body, matches: matches, user_token: token }
     try {
       const lambda = new aws.Lambda({ region: config.awsRegion });
-      lambdaRequest = lambda.invoke({ FunctionName: 'slash-response', InvocationType: 'Event', Payload: JSON.stringify(payload) });
+      const functionName = config.slashResponseFunctionName || 'slash-response';
+      lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: JSON.stringify(payload) });
       const lambdaReturn = lambdaRequest.send();
     } catch (e) {}
   };

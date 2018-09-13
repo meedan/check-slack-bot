@@ -158,22 +158,22 @@ const showProject = function(payload, callback) {
 const showTips = function(payload, callback) {
   let message = {
     response_type: 'ephemeral',
-    text: ':wave: ' + t('need_some_help_with') + ' ` /' + config.appName + '`?',
+    text: ':wave: ' + t('need_some_help_with') + ' `' + payload.body.command + '`?',
     attachments: [
       {
-        text: t('define_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`',
+        text: t('define_the_default_project_for_this_channel') + ':\n `' + payload.body.command + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`',
         mrkdwn_in: ['text'],
-        fallback: t('define_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`'
+        fallback: t('define_the_default_project_for_this_channel') + ':\n `' + payload.body.command + ' set ' + config.checkWeb.url + '/[team slug]/project/[project id]`'
       },
       {
-        text: t('show_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' show`',
+        text: t('show_the_default_project_for_this_channel') + ':\n `' + payload.body.command + ' show`',
         mrkdwn_in: ['text'],
-        fallback: t('show_the_default_project_for_this_channel') + ':\n `/' + config.appName + ' show`'
+        fallback: t('show_the_default_project_for_this_channel') + ':\n `' + payload.body.command + ' show`'
       },
       {
-        text: t('send_a_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `/' + config.appName + ' [URL]`',
+        text: t('send_a_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `' + payload.body.command + ' [URL]`',
         mrkdwn_in: ['text'],
-        fallback: t('send_the_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `/' + config.appName + ' [URL]`'
+        fallback: t('send_the_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `' + payload.body.command + ' [URL]`'
       }]
   };
   replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);

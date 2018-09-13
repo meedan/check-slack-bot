@@ -52,13 +52,13 @@ test('verify if type is valid on call', async () => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
-  const data = { type: "invalidType", body: { text: 'invalid input', team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/'}};
+  const data = { type: "invalidType", body: { text: 'invalid input', team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/', command: '/check'}};
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
   await sleep(3);
   expect(outputData).toMatch('Response from Slack');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Need some help') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Need some help with `/check`?') }));
 });
 
 test('call add url if type is createProjectMedia', () => {

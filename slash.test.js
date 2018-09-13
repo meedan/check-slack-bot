@@ -94,6 +94,21 @@ test('verify show on call', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Getting project'));
 });
 
+test('ignore show that is not in the beggining of command', async () => {
+  const user = await apiData();
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=<http://www.commitstrip.com/en/2014/08/19/when-a-colleague-put-his-fingers-on-my-screen-to-show-me-something>"};
+  const callback = jest.fn();
+  const context = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  slash.handler(data, context, callback);
+  await sleep(3);
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Sending URL to'));
+});
+
 test('accept empty command on call', async () => {
   const user = await apiData();
   const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text="};
