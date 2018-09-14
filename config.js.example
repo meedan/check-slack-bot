@@ -18,6 +18,8 @@ const config = {
   redisHost: 'without protocol or port, only the hostname',
   redisPrefix: 'check',
   awsRegion: 'us-east-1',
-  googleImageSearchFunctionName: 'if not provided, defaults to "google-image-search"'
+  googleImageSearchFunctionName: 'if not provided, defaults to "google-image-search"',
+  slashResponseFunctionName: 'if not provided, defaults to "slash-response"',
+  botId: 'BOTID'
 };
 module.exports = config;

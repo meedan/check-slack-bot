@@ -15,7 +15,8 @@ test('well formed', () => {
       redisHost: expect.any(String),
       redisPrefix: expect.any(String),
       awsRegion: expect.any(String),
-      googleImageSearchFunctionName: expect.any(String)
+      googleImageSearchFunctionName: expect.any(String),
+      slashResponseFunctionName: expect.any(String)
     })
   );
 });

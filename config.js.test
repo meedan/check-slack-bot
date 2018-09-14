@@ -21,6 +21,8 @@ const config = {
   redisHost: 'localhost',
   redisPrefix: 'qa',
   awsRegion: 'us-east-1',
-  googleImageSearchFunctionName: 'google-image-search-test'
+  googleImageSearchFunctionName: 'google-image-search-test',
+  slashResponseFunctionName: 'slash-response-test',
+  botId: 'BOTID'
 };
 module.exports = config;
