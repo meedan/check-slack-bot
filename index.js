@@ -68,13 +68,10 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 
 const displayCard = function(checkURLPattern, botId, text) {
   if (!text) { return false }
-  const slashBotCreatedPMRegexp = new RegExp(projectMediaCreatedMessage());
   const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
   switch(botId) {
     case undefined:
       return true;
-    case config.botId:
-      return slashBotCreatedPMRegexp.test(text)
     default:
       return urlFromBotRegexp.test(text)
   }
@@ -163,7 +160,7 @@ const process = function(event, callback) {
 
               if (data.mode === 'comment') {
                 createComment(event, data, token, callback, function(resp) {
-                  const message = { text: t('your_comment_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  const message = { text: t('your_note_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   const query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -174,7 +171,7 @@ const process = function(event, callback) {
 
               else if (/^add_translation_/.test(data.mode)) {
                 addTranslation(event, data, token, callback, function(resp) {
-                  const message = { text: t('your_translation_was_added') + ': ' + data.link, thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  const message = { text: t('your_translation_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   const query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);

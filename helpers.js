@@ -105,7 +105,7 @@ const formatMessageFromData = function(data) {
     },
     {
       name: 'add_comment',
-      text: t('add_comment', true),
+      text: t('add_note', true),
       type: 'button',
       style: 'primary'
     },

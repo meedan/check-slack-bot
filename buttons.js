@@ -112,12 +112,12 @@ const saveAndReply = function(data, token, callback, mode, newMessage, attachmen
 };
 
 const addComment = function(data, token, callback) {
-  const newMessage = t('type_your_comment_below');
+  const newMessage = t('type_your_note_below');
 
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'type_comment',
-    text: t('type_your_comment_in_the_thread_below'),
+    text: t('type_your_note_in_the_thread_below'),
     type: 'button',
     style: 'default'
   };
@@ -141,7 +141,7 @@ const markTranslationAsError = function(data, token, callback) {
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'add_comment',
-    text: t('add_comment', true),
+    text: t('add_note', true),
     type: 'button',
     style: 'primary'
   };
@@ -165,7 +165,7 @@ const addTranslation = function(data, token, callback, language) {
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'add_comment',
-    text: t('add_comment', true),
+    text: t('add_note', true),
     type: 'button',
     style: 'primary'
   };
@@ -189,7 +189,7 @@ const editTitle = function(data, token, callback) {
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'add_comment',
-    text: t('add_comment', true),
+    text: t('add_note', true),
     type: 'button',
     style: 'primary'
   };
@@ -216,7 +216,7 @@ const editDescription = function(data, token, callback) {
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'add_comment',
-    text: t('add_comment', true),
+    text: t('add_note', true),
     type: 'button',
     style: 'primary'
   };
@@ -295,7 +295,7 @@ const process = function(data, callback, context) {
             addTranslation(data, token, callback, language);
             break;
           case 'type_comment':
-            callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_comment_inside_the_thread_above') });
+            callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_note_inside_the_thread_above') });
             break;
           case 'edit':
             const attribute = data.actions[0].selected_options[0].value;
