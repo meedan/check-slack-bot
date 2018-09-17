@@ -63,7 +63,7 @@ test('identify Slack user and handle invalid action', async () => {
 test('identify Slack user and handle type_comment command', async () => {
   const { outputData, callback } = await sendAction({ name: 'type_comment' });
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type your comment') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type your note') }));
 });
 
 test('identify Slack user and handle type_title command', async () => {
@@ -109,7 +109,7 @@ test('identify Slack user and handle add_comment command', async () => {
   const { outputData, callback } = await sendAction({ name: 'add_comment' }, callback_id);
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Saved Redis');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your comment') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your note') }));
 });
 
 test('identify Slack user and mark status as error on Bridge', async () => {
