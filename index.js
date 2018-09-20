@@ -68,7 +68,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
 
 const displayCard = function(checkURLPattern, botId, text) {
   if (!text) { return false }
-  const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
+  const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '\>');
   switch(botId) {
     case undefined:
       return true;
