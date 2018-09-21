@@ -66,9 +66,13 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   });
 };
 
+const escapeRegExp = function(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 const displayCard = function(checkURLPattern, botId, text) {
   if (!text) { return false }
-  const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '(?!\|)\>');
+  const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '\>');
   switch(botId) {
     case undefined:
       return true;
@@ -78,8 +82,8 @@ const displayCard = function(checkURLPattern, botId, text) {
 };
 
 const process = function(event, callback) {
-  const mainRegexp = new RegExp(config.checkWeb.url, 'g');
-  const checkURLPattern = config.checkWeb.url + '/([^/]+)/project/([0-9]+)/media/([0-9]+)';
+  const mainRegexp = new RegExp(escapeRegExp(config.checkWeb.url), 'g');
+  const checkURLPattern = escapeRegExp(config.checkWeb.url) + '\/([^/]+)\/project\/([0-9]+)\/media\/([0-9]+)';
   const regexp = new RegExp(checkURLPattern, 'g');
 
   // This message contains a Check URL to be parsed
