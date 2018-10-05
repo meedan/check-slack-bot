@@ -174,6 +174,11 @@ const showTips = function(payload, callback) {
         text: t('send_a_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `' + payload.body.command + ' [URL]`',
         mrkdwn_in: ['text'],
         fallback: t('send_the_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `' + payload.body.command + ' [URL]`'
+      },
+      {
+        text: t('Or_see_our_detailed_user_guide') + ' ' + 'https://medium.com/meedan-user-guides/add-to-check-from-slack-5fee91dadc35',
+        mrkdwn_in: ['text'],
+        fallback: t('Or_see_our_detailed_user_guide') + ' ' + 'https://medium.com/meedan-user-guides/add-to-check-from-slack-5fee91dadc35'
       }]
   };
   replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
