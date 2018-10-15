@@ -10,6 +10,8 @@ const {
 
 jest.setTimeout(120000);
 
+const timeout = 20;
+
 test('search for image', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
@@ -21,10 +23,10 @@ test('search for image', async () => {
       id: 123
     },
     thread_ts: new Date().getTime(),
-    image_url: 'http://ca.ios.ba/files/others/banana.jpg'
+    image_url: 'https://ca.ios.ba/files/others/banana.jpg'
   };
   gis.handler(data, null, callback);
-  await sleep(8);
+  await sleep(timeout);
   
   expect(outputData).toMatch('banana');
   expect(outputData).toMatch('Image search URL: https://');
@@ -47,7 +49,7 @@ test('search for image but return no data', async () => {
     image_url: 'nothing'
   };
   gis.handler(data, null, callback);
-  await sleep(8);
+  await sleep(timeout);
   
   expect(outputData).not.toMatch('banana');
   expect(outputData).not.toMatch('Image search URL: https://');
@@ -77,7 +79,7 @@ test('search for image but return error', async () => {
   const requestGet = request.get;
   request.get = requestReturnsError;
   await gis.handler(data, null, callback);
-  await sleep(8);
+  await sleep(timeout);
   request.get = requestGet;
   
   expect(outputData).not.toMatch('banana');
