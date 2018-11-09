@@ -86,13 +86,13 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
   executeMutation(mutationQuery, vars, fail, done, token, callback, {}, data);
 };
 
-const addUrl = function(payload, callback) {
+const addUrl = function(payload, redisKey, callback) {
   const responseUrl = payload.body.response_url;
   const team_id = payload.body.team_id;
   const url = payload.matches[1];
   const vars =  { url: url, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}`};
   const redis = getRedisClient();
-  redis.get(REDIS_KEY, function(err, reply) {
+  redis.get(redisKey, function(err, reply) {
     if (!reply) {
       console.log('Could not find Redis key for channel' + ' #' + payload.body.channel_name);
       let message = { text: t('default_project_not_defined_for_this_channel'), response_type: 'ephemeral' };
@@ -109,7 +109,7 @@ const addUrl = function(payload, callback) {
   console.log('Add URL to ' + humanAppName() + ': ' + url);
 };
 
-const setProject = function(payload, callback) {
+const setProject = function(payload, redisKey, callback) {
   const projectUrl = payload.matches[0],
         teamSlug = payload.matches[1],
         projectId = payload.matches[2];
@@ -128,7 +128,7 @@ const setProject = function(payload, callback) {
       replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
     };
 
-    saveToRedisAndReplyToSlack(REDIS_KEY, value, message, success, callback);
+    saveToRedisAndReplyToSlack(redisKey, value, message, success, callback);
   };
 
   //Handle if project doesn't exist
@@ -136,11 +136,11 @@ const setProject = function(payload, callback) {
   console.log('Set project: ' + projectUrl);
 };
 
-const showProject = function(payload, callback) {
+const showProject = function(payload, redisKey, callback) {
   let message = ''
   const redis = getRedisClient();
   redis.on('connect', function() {
-    redis.get(REDIS_KEY, function(err, reply) {
+    redis.get(redisKey, function(err, reply) {
       if (!reply) {
         console.log('Could not find Redis key for channel' + ' #' + payload.body.channel_name);
         message = { text: t('default_project_not_defined_for_this_channel'), response_type: 'ephemeral' };
@@ -185,16 +185,16 @@ const showTips = function(payload, callback) {
 };
 
 exports.handler = function(event, context, callback) {
-  REDIS_KEY = 'slack_channel_project:' + config.redisPrefix + ':' + event.body.channel_id;
+  const redisKey = 'slack_channel_project:' + config.redisPrefix + ':' + event.body.channel_id;
   switch (event.type) {
     case 'createProjectMedia':
-      addUrl(event, callback);
+      addUrl(event, redisKey, callback);
       break;
     case 'setProject':
-      setProject(event, callback);
+      setProject(event, redisKey, callback);
       break;
     case 'showProject':
-      showProject(event, callback);
+      showProject(event, redisKey, callback);
       break;
     default:
       showTips(event, callback);
