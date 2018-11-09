@@ -200,7 +200,7 @@ test('return error message when try to show project but not defined on channel',
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
-  await sleep(2);
+  await sleep(4);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Default project not defined') }));
 });
@@ -214,7 +214,7 @@ test('show project set to channel', async () => {
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
-  await sleep(2);
+  await sleep(4);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Project set to channel: ' + response.projectUrl) }));
 });
