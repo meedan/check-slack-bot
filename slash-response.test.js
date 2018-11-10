@@ -45,6 +45,7 @@ const sendToRedis = async (response, channelId) => {
   const key = 'slack_channel_project:' + config.redisPrefix + ':' + channelId;
   const value = JSON.stringify({ team_slug: response.team.data.slug, project_id: response.project.data.dbid, project_title: response.project.data.title, project_url: response.projectUrl });
   await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(5);
 };
 
 test('verify if type is valid on call', async () => {
