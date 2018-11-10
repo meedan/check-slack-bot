@@ -45,6 +45,7 @@ const sendToRedis = async (response, channelId) => {
   const key = 'slack_channel_project:' + config.redisPrefix + ':' + channelId;
   const value = JSON.stringify({ team_slug: response.team.data.slug, project_id: response.project.data.dbid, project_title: response.project.data.title, project_url: response.projectUrl });
   await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(5);
 };
 
 test('verify if type is valid on call', async () => {
@@ -142,10 +143,10 @@ test('successfully add url', async () => {
   console['log'] = jest.fn(storeLog);
 
   const response = await projectData();
-  await sendToRedis(response, 'the-channel');
+  await sendToRedis(response, response.project.data.title);
 
   const url = 'https://ca.ios.ba/'
-  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
+  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
@@ -157,14 +158,14 @@ test('successfully add url', async () => {
 
 test('return error message if duplicated url and its url', async () => {
   const response = await projectData();
-  await sendToRedis(response, 'the-channel');
+  await sendToRedis(response, response.project.data.title);
 
   const url = 'https://ca.ios.ba/'
 
   let pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'metadata' });
 
-  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
+  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
@@ -176,14 +177,14 @@ test('return error message if duplicated url and its url', async () => {
 
 test('return error message if project is archived', async () => {
   const response = await projectData();
-  await sendToRedis(response, 'the-channel');
+  await sendToRedis(response, response.project.data.title);
 
   const url = 'https://ca.ios.ba/'
 
   const pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
   await callCheckApi('archive_project', { project_id: pm.data.project_id });
 
-  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, matches: ['', 'https://meedan.com/en', response.project.data.dbid], user_token: response.user.data.token};
+  const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, matches: ['', 'https://meedan.com/en', response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
 
 	sr.handler(data, null, callback);
@@ -200,21 +201,21 @@ test('return error message when try to show project but not defined on channel',
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
-  await sleep(2);
+  await sleep(4);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Default project not defined') }));
 });
 
 test('show project set to channel', async () => {
   const response = await projectData();
-  await sendToRedis(response, 'the-channel');
+  await sendToRedis(response, response.project.data.title);
 
-  const data = { type: "showProject", body: { team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/', channel_id: 'the-channel'}, user_token: response.user.data.token};
+  const data = { type: "showProject", body: { team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, user_token: response.user.data.token};
 
   const callback = jest.fn();
 
   sr.handler(data, null, callback);
-  await sleep(2);
+  await sleep(4);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Project set to channel: ' + response.projectUrl) }));
 });
