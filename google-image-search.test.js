@@ -23,7 +23,7 @@ test('search for image', async () => {
       id: 123
     },
     thread_ts: new Date().getTime(),
-    image_url: 'https://ca.ios.ba/files/others/banana.jpg'
+    image_url: 'https://ca.ios.ba/files/others/banana.jpg?1'
   };
   gis.handler(data, null, callback);
   await sleep(timeout);
