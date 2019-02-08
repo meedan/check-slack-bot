@@ -16,10 +16,10 @@ const createUser = async () => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  const user = await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  const user = await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
   console.log(user);
   return user;
 };

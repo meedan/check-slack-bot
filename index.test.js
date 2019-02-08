@@ -52,10 +52,10 @@ const testEditMedia = async (field) => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
@@ -68,7 +68,7 @@ const testEditMedia = async (field) => {
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
-  const event = { channel: 'test', thread_ts, user: uuid, text: `Changed ${field}` };
+  const event = { channel: 'test', thread_ts, user: uid, text: `Changed ${field}` };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
 
@@ -103,10 +103,10 @@ test('identify Slack user and create comment', async () => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
@@ -119,7 +119,7 @@ test('identify Slack user and create comment', async () => {
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
-  const event = { channel: 'test', thread_ts, user: uuid, text: 'Test' };
+  const event = { channel: 'test', thread_ts, user: uid, text: 'Test' };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
 
@@ -143,10 +143,10 @@ test('identify Slack user and create translation', async () => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
@@ -159,7 +159,7 @@ test('identify Slack user and create translation', async () => {
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
-  const event = { channel: 'test', thread_ts, user: uuid, text: 'Test' };
+  const event = { channel: 'test', thread_ts, user: uid, text: 'Test' };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
 
@@ -183,10 +183,10 @@ test('identify Slack user and mark translation request as error', async () => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
@@ -199,7 +199,7 @@ test('identify Slack user and mark translation request as error', async () => {
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
-  const event = { channel: 'test', thread_ts, user: uuid, text: 'Test' };
+  const event = { channel: 'test', thread_ts, user: uid, text: 'Test' };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
 
