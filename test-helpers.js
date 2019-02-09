@@ -74,12 +74,15 @@ const callCheckApi = async (path, params) => {
   let url = config.checkApi.url + '/test/' + path + querystring;
   const res = await fetch(url);
   const json = await res.json();
+  if (path === 'user') {
+    json.data["uid"] = params.uid
+  }
   return json;
 };
 
 const sendAction = async (action, callback_id, image_url) => {
-  let uuid = buildRandomString();
-  const payload = buildPayload('123456abcdef', 'T12345ABC', uuid, action, callback_id, image_url);
+  let uid = buildRandomString();
+  const payload = buildPayload('123456abcdef', 'T12345ABC', uid, action, callback_id, image_url);
   const data = buildData('123456abcdef', 'process', payload);
   const callback = jest.fn();
 
@@ -89,7 +92,7 @@ const sendAction = async (action, callback_id, image_url) => {
 
   let token = buildRandomString();
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
-  await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
 
   buttons.handler(data, null, callback);
   await sleep(3);

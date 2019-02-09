@@ -13,17 +13,17 @@ const apiData = async () => {
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
   await sleep(1);
 
-  const uuid = buildRandomString();
+  const uid = buildRandomString();
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
-  const user = await callCheckApi('user', { provider: 'slack', uuid, token, is_admin: true });
+  const user = await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
 
   return user;
 };
 
 test('verify input format on call', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=unknown"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=unknown"};
   const callback = jest.fn();
 
   let outputData = '';
@@ -37,7 +37,7 @@ test('verify input format on call', async () => {
 
 test('verify url and project on call', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=<https://ca.ios.ba/>"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=<https://ca.ios.ba/>"};
   const callback = jest.fn();
 
   let outputData = '';
@@ -52,7 +52,7 @@ test('verify url and project on call', async () => {
 test('verify set and valid check link on call', async () => {
   const projectUrl = config.checkWeb.url + '/my-team/project/1';
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=set <" + projectUrl + ">"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=set <" + projectUrl + ">"};
   const callback = jest.fn();
 
   let outputData = '';
@@ -67,7 +67,7 @@ test('verify set and valid check link on call', async () => {
 test('verify set and invalid check link on call', async () => {
   const projectUrl = 'http://invalid-domain/my-team/project/1';
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=set <" + projectUrl + ">"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=set <" + projectUrl + ">"};
   const callback = jest.fn();
 
   let outputData = '';
@@ -81,7 +81,7 @@ test('verify set and invalid check link on call', async () => {
 
 test('verify show on call', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=show"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=show"};
   const callback = jest.fn();
   const context = jest.fn();
 
@@ -96,7 +96,7 @@ test('verify show on call', async () => {
 
 test('ignore show that is not in the beggining of command', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=<http://www.commitstrip.com/en/2014/08/19/when-a-colleague-put-his-fingers-on-my-screen-to-show-me-something>"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=<http://www.commitstrip.com/en/2014/08/19/when-a-colleague-put-his-fingers-on-my-screen-to-show-me-something>"};
   const callback = jest.fn();
   const context = jest.fn();
 
@@ -111,7 +111,7 @@ test('ignore show that is not in the beggining of command', async () => {
 
 test('accept empty command on call', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text="};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text="};
   const callback = jest.fn();
 
   let outputData = '';
@@ -125,7 +125,7 @@ test('accept empty command on call', async () => {
 
 test('accept help command on call', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=help"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=help"};
   const callback = jest.fn();
 
   let outputData = '';
@@ -172,7 +172,7 @@ test('call slash-response by default when not present on config', async () => {
   config.slashResponseFunctionName = false;
 
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uuid + "&text=help"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=help"};
 
   const callback = jest.fn();
   awsMock.mock('Lambda', 'invoke', function({}) { console.log('AWS Mocked Method'); });
