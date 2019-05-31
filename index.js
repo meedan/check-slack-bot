@@ -15,7 +15,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
     project_media(ids: $ids) {
       id
       dbid
-      metadata
+      oembed_metadata
       last_status
       last_status_obj {
         id
@@ -58,7 +58,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   .then((resp, errors) => {
     console.log('GraphQL query response: ' + util.inspect(resp));
     const pm = resp.project_media;
-    pm.metadata = JSON.parse(pm.metadata);
+    pm.oembed_metadata = JSON.parse(pm.oembed_metadata);
     done(pm);
   })
   .catch(function(e) {
@@ -187,7 +187,7 @@ const process = function(event, callback) {
               else if (data.mode === 'translation_error') {
                 markTranslationAsError(event, data, token, callback, function(resp) {
                   const obj = resp.updateDynamic.project_media;
-                  obj.metadata = JSON.parse(obj.metadata);
+                  obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
                   
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
                   const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
@@ -210,7 +210,7 @@ const process = function(event, callback) {
 
                 updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
                   const obj = resp.updateProjectMedia.project_media;
-                  obj.metadata = JSON.parse(obj.metadata);
+                  obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
                   
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
                   const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
@@ -219,7 +219,7 @@ const process = function(event, callback) {
                     console.log('Response from Slack message update: ' + res);
                   });
 
-                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.oembed_metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                               response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -306,12 +306,12 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
   const id = data.graphql_id,
         text = event.text;
   
-  const mutationQuery = `($embed: String!, $id: ID!, $clientMutationId: String!) {
-    updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, embed: $embed, id: $id }) {
+  const mutationQuery = `($metadata: String!, $id: ID!, $clientMutationId: String!) {
+    updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, metadata: $metadata, id: $id }) {
       project_media {
         id
         dbid
-        metadata
+        oembed_metadata
         last_status
         last_status_obj {
           id
@@ -350,11 +350,11 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
     }
   }`;
 
-  let embed = {};
-  embed[attribute] = text;
+  let metadata = {};
+  metadata[attribute] = text;
   
   const vars = {
-    embed: JSON.stringify(embed),
+    metadata: JSON.stringify(metadata),
     id: id,
     clientMutationId: `fromSlackMessage:${event.thread_ts}`
   };
@@ -378,7 +378,7 @@ const markTranslationAsError = function(event, data, token, callback, done) {
       project_media {
         id
         dbid
-        metadata
+        oembed_metadata
         last_status
         last_status_obj {
           id

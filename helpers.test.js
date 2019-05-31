@@ -119,7 +119,7 @@ test('format message from Check API data that contain a picture', async () => {
       all: 3,
       completed: 2
     },
-    metadata: {
+    oembed_metadata: {
       picture: 'https://picsum.photos/200/300',
       title: 'Test ' + buildRandomString(15),
       description: buildRandomString(51),

@@ -63,7 +63,7 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
     createProjectMedia: createProjectMedia(input: { clientMutationId: $clientMutationId, url: $url, project_id: $pid }) {
       project_media {
         dbid
-        metadata
+        oembed_metadata
         url
         quote
       }
@@ -77,8 +77,8 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
 
   const done = function(resp) {
     console.log('GraphQL query response: ' + util.inspect(resp));
-    const metadata = JSON.parse(resp.createProjectMedia.project_media.metadata);
-    let message = { response_type: "in_channel", text: projectMediaCreatedMessage() + metadata.permalink };
+    const oembedMetadata = JSON.parse(resp.createProjectMedia.project_media.oembed_metadata);
+    let message = { response_type: "in_channel", text: projectMediaCreatedMessage() + oembedMetadata.permalink };
     replyToSlack(team_id, responseUrl, message, callback);
     callback(null, message);
   };

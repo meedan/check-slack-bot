@@ -163,7 +163,7 @@ test('return error message if duplicated url and its url', async () => {
   const url = 'https://ca.ios.ba/'
 
   let pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
-  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'metadata' });
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'oembed_metadata' });
 
   const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, matches: ['', url, response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
@@ -172,7 +172,7 @@ test('return error message if duplicated url and its url', async () => {
   await sleep(8);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.metadata).permalink})])}));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.oembed_metadata).permalink})])}));
 });
 
 test('return error message if project is archived', async () => {
