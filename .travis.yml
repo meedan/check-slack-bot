@@ -38,6 +38,7 @@ before_install:
 - sudo service elasticsearch restart
 - sleep 15
 - sudo service elasticsearch status
+- docker run -d -p 9000:9000 -e "MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE" -e "MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" minio/minio server /data
 - git clone https://github.com/meedan/pender.git
 - d=configurator/check/travis/pender/; for f in $(find $d -type f); do cp "$f" "pender/${f/$d/}"; done
 - cd pender
