@@ -2,10 +2,40 @@ const config = require('./config.js'),
       https = require('https'),
       request = require('request'),
       qs = require('querystring'),
+      aws = require('aws-sdk'),
       util = require('util');
 let ACCESS_TOKEN = null;
       
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack } = require('./helpers.js');
+
+const getField = function(query, callback, done) {
+  const client = getGraphqlClient(null, config.checkApi.apiKey, callback);
+
+  const fieldQuery = `
+  query dynamic_annotation_field($query: String!) {
+    dynamic_annotation_field(query: $query) {
+      annotation {
+        id
+        dbid
+        project {
+          url
+          title
+          dbid
+          team {
+            slug
+          }
+        }
+      }
+    }
+  }
+  `;
+
+  client.query(fieldQuery, { query })
+  .then((resp, errors) => {
+    console.log('GraphQL query response: ' + util.inspect(resp));
+    done(resp.dynamic_annotation_field);
+  });
+};
 
 const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, done) {
   const client = getGraphqlClient(teamSlug, config.checkApi.apiKey, callback);
@@ -81,10 +111,133 @@ const displayCard = function(checkURLPattern, botId, text) {
   }
 };
 
-const process = function(event, callback) {
+const process = function(event, callback, teamConfig) {
   const mainRegexp = new RegExp(escapeRegExp(config.checkWeb.url), 'g');
   const checkURLPattern = escapeRegExp(config.checkWeb.url) + '\/([^/]+)\/project\/([0-9]+)\/media\/([0-9]+)';
   const regexp = new RegExp(checkURLPattern, 'g');
+
+  // Image uploaded for Smooch user
+  if (event.type === 'message' && event.subtype === 'file_share' && /^\/sk($| )/.test(event.text)) {
+    event.team_id = teamConfig.teamId;
+    const functionName = config.slashResponseFunctionName || 'slash-response';
+    const payload = { type: 'sendSmoochImage', body: event };
+    if (config.awsRegion === 'local') {
+      const lambda = require('./' + functionName).handler;
+      console.log('Calling local function');
+      lambda(payload, {}, function() {});
+    }
+    else {
+      const lambda = new aws.Lambda({ region: config.awsRegion });
+      lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: JSON.stringify(payload) });
+      lambdaRequest.send();
+    }
+    callback(null);
+  }
+
+  // Two possible cases here:
+  // 1) This message is from the Slack user to the Smooch user, so we need to move the conversation to "human mode" if it's still in "bot mode"; or
+  // 2) A channel was archived, so we need to move the conversation back to "bot mode" if it's still in "human mode"
+  if (event.type === 'channel_archive' || (event.bot_id === teamConfig.smoochBotId && event.text !== '' && / replied$/.test(event.username))) {
+    let mode = 'human';
+    let action = 'deactivate';
+    if (event.type === 'channel_archive') {
+      mode = 'bot';
+      action = 'reactivate';
+    }
+
+    const redis = getRedisClient();
+    redis.on('connect', function() {
+      const redisKey = 'slack_channel_smooch:' + config.redisPrefix + ':' + event.channel;
+      redis.get(redisKey, function(err, reply) {
+        const data = JSON.parse(reply.toString());
+        if (data.mode !== mode) {
+          const newData = Object.assign({}, data);
+          newData.mode = mode;
+          redis.set(redisKey, JSON.stringify(newData), function() {
+            const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
+              updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+                project {
+                  id
+                }
+              }
+            }`;
+
+            const done = function() {
+              if (event.type !== 'channel_archive') {
+                console.log('Bot was deactivated because a message was sent');
+                callback(null);
+              }
+              else {
+                console.log('Bot was reactivated because channel was archived');
+                callback(null);
+              }
+            };
+            
+            const token = config.checkApi.apiKey;
+            executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${event.ts}` }, null, done, token, callback, event, {});
+            
+            if (event.type !== 'channel_archive') {
+              const message = { text: t('the_bot_was_deactivated_for_this_conversation'), response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
+              const query = qs.stringify(message);
+              https.get('https://slack.com/api/chat.postMessage?' + query);
+            }
+          });
+        }
+        else {
+          console.log('Already in ' + mode + ' mode');
+          callback(null);
+        }
+        redis.quit();
+      });
+    });
+  }
+
+  // This message is from Smooch Bot when it auto-creates a channel for a user
+  // We associate the Smooch Bot project with the Slack channel and store the "smooch_user" annotation related to the Slack channel
+  else if (event.bot_id === teamConfig.smoochBotId && event.attachments && event.attachments[0] && event.attachments[0].fields) {
+    let appName = null;
+    let phoneNumber = null;
+    event.attachments[0].fields.forEach(function(field) {
+      if (field.title === 'App') {
+        appName = field.value;
+      }
+      if (field.title === 'Device Info') {
+        phoneNumber = field.value.match(/Phone Number: (.*)/)[1];
+      }
+    });
+    if (appName && phoneNumber) {
+      const query = JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: appName, phone: phoneNumber } });
+      getField(query, callback, function(resp) {
+        const projectUrl = resp.annotation.project.url;
+        const projectTitle = resp.annotation.project.title;
+        const projectId = resp.annotation.project.dbid;
+        const teamSlug = resp.annotation.project.team.slug;
+
+        const value = { team_slug: teamSlug, project_id: projectId, project_title: projectTitle, project_url: projectUrl };
+        const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
+        const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
+        
+        const redis = getRedisClient();
+        redis.on('connect', function() {
+          redis.multi()
+          .set('slack_channel_project:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value))
+          .set('slack_channel_smooch:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value2))
+          .exec(function() {
+            const query = qs.stringify(message);
+            https.get('https://slack.com/api/chat.postMessage?' + query, function() {
+              callback(null);
+            });
+            console.log('Associated with annotation ' + resp.annotation.dbid);
+          });
+          redis.quit();
+        });
+      });
+    }
+    else {
+      console.log('Could not find application name and phone number');
+      callback(null);
+    }
+  }
 
   // This message contains a Check URL to be parsed
   if (displayCard(checkURLPattern, event.bot_id, event.text)) {
@@ -427,8 +580,9 @@ exports.handler = function(data, context, callback) {
       break;
     case 'event_callback':
       const teamConfig = getTeamConfig(data.team_id);
+      teamConfig.teamId = data.team_id;
       ACCESS_TOKEN = teamConfig.accessToken;
-      process(data.event, callback);
+      process(data.event, callback, teamConfig);
       break;
     default:
       callback(null);

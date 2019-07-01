@@ -24,6 +24,8 @@ const process = function(body, token, callback) {
   const setProjectRegexp = new RegExp(/set <(.+)>/, 'g');
   const showProjectRegexp = new RegExp(/^show/, 'g');
   const addUrlRegexp = new RegExp(/<(.+)>/, 'g');
+  const activateBotRegexp = new RegExp(/^bot activate/, 'g');
+  const passthruBotRegexp = new RegExp(/^bot passthru/, 'g');
 
   let action = '';
   if (projectUrl = setProjectRegexp.exec(body.text)) {
@@ -38,6 +40,12 @@ const process = function(body, token, callback) {
   } else if (matches = addUrlRegexp.exec(body.text)) {
     text = t('sending_URL_to') + ' ' + humanAppName() + ': ' + matches[1];
     action = 'createProjectMedia';
+  } else if (activateBotRegexp.test(body.text)) {
+    text = t('reactivating_bot_for_this_conversation');
+    action = 'reactivateBot';
+  } else if (passthruBotRegexp.test(body.text)) {
+    text = t('reactivating_bot_for_this_conversation_and_sending_last_message_to_it');
+    action = 'passthruBot';
   } else {
     text = '';
     action = 'showTips';
@@ -45,11 +53,18 @@ const process = function(body, token, callback) {
 
   if (action != '') {
     const payload = { type: action, body: body, matches: matches, user_token: token }
+    const functionName = config.slashResponseFunctionName || 'slash-response';
     try {
-      const lambda = new aws.Lambda({ region: config.awsRegion });
-      const functionName = config.slashResponseFunctionName || 'slash-response';
-      lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: JSON.stringify(payload) });
-      const lambdaReturn = lambdaRequest.send();
+      if (config.awsRegion === 'local') {
+        const lambda = require('./' + functionName).handler;
+        lambda(payload, {}, function() {});
+        console.log('Calling local function');
+      }
+      else {
+        const lambda = new aws.Lambda({ region: config.awsRegion });
+        lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: JSON.stringify(payload) });
+        lambdaRequest.send();
+      }
     } catch (e) {}
   };
   console.log(text);
@@ -57,7 +72,7 @@ const process = function(body, token, callback) {
 };
 
 exports.handler = function(event, context, callback) {
-  const body = qs.parse(decodeURIComponent(event.body));
+  const body = config.awsRegion === 'local' ? event : qs.parse(decodeURIComponent(event.body));
   const teamConfig = getTeamConfig(body.team_id);
   if (body.token === teamConfig.verificationToken) {
     getCheckSlackUser(body.user_id,

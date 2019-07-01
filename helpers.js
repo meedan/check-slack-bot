@@ -195,7 +195,11 @@ const getGraphqlClient = function(team, token, callback) {
     headers['Authorization'] = basic;
   }
 
-  const transport = new Transport(config.checkApi.url + '/api/graphql?team=' + team, { headers, credentials: false, timeout: 120000 });
+  let path = '/api/graphql';
+  if (team) {
+    path += '?team=' + team;
+  }
+  const transport = new Transport(config.checkApi.url + path, { headers, credentials: false, timeout: 120000 });
   const client = new Lokka({ transport });
 
   return client;
@@ -241,7 +245,9 @@ const executeMutation = function(mutationQuery, vars, fail, done, token, callbac
   })
   .catch(function(e) {
     console.log('Error when executing mutation: ' + util.inspect(e));
-    fail(callback, thread, channel, data.link, e);
+    if (fail) {
+      fail(callback, thread, channel, data.link, e);
+    }
   });
 };
 

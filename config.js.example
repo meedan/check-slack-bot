@@ -13,6 +13,8 @@ const config = {
     <teamId>: {
       verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
       accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',
+      legacyToken: 'Find it at https://api.slack.com/custom-integrations/legacy-tokens',
+      smoochBotId: 'Slack id of the Smooch bot, so we can identify messages from it',
     }
   },
   redisHost: 'without protocol or port, only the hostname',

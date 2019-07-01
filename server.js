@@ -1,5 +1,5 @@
 const express = require('express');
-const serveStatic = require('serve-static');
+const bodyParser = require('body-parser');
 const path = require('path');
 const util = require('util');
 
@@ -18,12 +18,23 @@ function generateCallback(response) {
 }
 
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 functions.forEach(function(name) {
   app.post('/' + name, function(request, response){
     const lambda = require('./' + name).handler;
-    console.log(util.inspect(request.body));
-    lambda(request.body, { source: 'local' }, generateCallback(response));
+    const data = request.body;
+    const headers = request.headers;
+    if (headers['x-slack-retry-num'] && headers['x-slack-retry-reason'] === 'http_timeout') {
+      // Ignore
+    }
+    else {
+      console.log(util.inspect(headers));
+      console.log(util.inspect(data));
+      lambda(data, { source: 'local' }, generateCallback(response));
+      console.log('--------------------------------------------------------------------------------------');
+    }
   });
 });
 

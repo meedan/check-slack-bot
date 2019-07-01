@@ -20,7 +20,6 @@ const createUser = async () => {
   const token = buildRandomString();
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { provider: 'slack', uid, token, is_admin: true });
-  console.log(user);
   return user;
 };
 
@@ -218,4 +217,103 @@ test('show project set to channel', async () => {
   await sleep(4);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Project set to channel: ' + response.projectUrl) }));
+});
+
+test('reactivate Smooch bot', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const callback = jest.fn();
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const annotation = await callCheckApi('dynamic_annotation', { set_action: 'deactivate', annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const data =  { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'reactivateBot' };
+  sr.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Conversation is now in bot mode');
+  expect(callback).toHaveBeenCalledWith(null, { response_type: 'in_channel', text: 'Conversation is now in bot mode' });
+
+  sr.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Conversation is already in bot mode');
+
+  data.body.channel_id = 'test2'
+  sr.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Could not find Redis key for channel');
+});
+
+test('passthru Smooch bot', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const callback = jest.fn();
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const annotation = await callCheckApi('dynamic_annotation', { set_action: 'deactivate', annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const data = { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'passthruBot' };
+  sr.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Conversation is now in bot mode');
+  expect(callback).toHaveBeenCalledWith(null, { response_type: 'in_channel', text: 'Conversation is now in bot mode' });
+});
+
+test('send Smooch image', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const callback = jest.fn();
+
+  const data = { body: { text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
+  sr.handler(data, null, callback);
+  await sleep(5);
+
+  expect(outputData).toMatch('Sent image: https://i.imgur.com');
+
+  const data2 = { body: { text: '/sk Test', files: [{ url_private: 'https://notavalidimageurl.xyz' }] }, type: 'sendSmoochImage' };
+  sr.handler(data2, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Could not send image');
+});
+
+test('cannot reactivate Smooch bot', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const callback = jest.fn();
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const data =  { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'reactivateBot' };
+  sr.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Error when executing mutation');
 });

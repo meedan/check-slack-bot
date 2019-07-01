@@ -1,5 +1,8 @@
 const { exec } = require('child_process');
 const btoa = require('btoa');
+const atob = require('atob');
+let aws = require('aws-sdk');
+const awsMock = require('aws-sdk-mock');
 let config = require('./config');
 const index = require('./index');
 const {
@@ -395,4 +398,127 @@ test('cannot identify Slack user in edit_description mode', async () => {
 
 test('cannot identify Slack user in unknown mode', async () => {
   await buttonAction('unknown');
+});
+
+test('call Lambda function when image is uploaded to Smooch conversation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  const event = { type: 'message', subtype: 'file_share', text: '/sk Sending image' };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  awsMock.mock('Lambda', 'invoke', function({}) { console.log('AWS Mocked Method'); });
+  index.handler(data, null, callback);
+  await sleep(3);
+  
+  expect(outputData).toMatch('AWS Mocked Method');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('call Lambda function locally when image is uploaded to Smooch conversation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+ 
+  const functionName = config.slashResponseFunctionName;
+  config.slashResponseFunctionName = false;
+  const awsRegion = config.awsRegion;
+  config.awsRegion = 'local'; 
+
+  const event = { type: 'message', subtype: 'file_share', text: '/sk Sending image', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+  
+  expect(outputData).toMatch('Calling local function');
+  expect(callback).toHaveBeenCalledWith(null);
+  config.slashResponseFunctionName = functionName;
+  config.awsRegion = awsRegion;
+});
+
+test('move Smooch conversation to "human mode" in Smooch conversation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const value = JSON.stringify({ mode: 'bot', annotation_id: annotation.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const event = { bot_id: 'ABCDEFGH', text: 'Test', username: 'Test replied', channel: 'test' };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Bot was deactivated because a message was sent');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('move Smooch conversation to "bot mode" in Smooch conversation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  await exec(`redis-cli set ${key} '${value}'`);
+  await sleep(3);
+
+  const event = { type: 'channel_archive', channel: 'test' };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Bot was reactivated because channel was archived');
+  expect(callback).toHaveBeenCalledWith(null);
+
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Already in bot mode');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
+test('get annotation related to Smooch conversation', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const phone = new Date().getTime().toString();
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone, app_name: 'Test' }) });
+  const id = atob(annotation.data.graphql_id).split('/')[1];
+
+  const event = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: ' + phone }] }] };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Associated with annotation ' + id);
+  expect(callback).toHaveBeenCalledWith(null);
+
+  const event2 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'Foo', value: 'Bar' }] }] };
+  const data2 = buildData('123456abcdef', 'event_callback', event2);
+  index.handler(data2, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Could not find application name and phone number');
+  expect(callback).toHaveBeenCalledWith(null);
 });

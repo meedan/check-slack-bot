@@ -1,8 +1,8 @@
 const config = {
   appName: 'check',
   checkApi: {
-    url: 'http://api.test:13000',
-    apiKey: 'testkey',
+    url: 'http://api.test:13000', // 'http://localhost:13000',
+    apiKey: 'test',
     httpAuth: false
   },
   checkWeb: {
@@ -11,11 +11,15 @@ const config = {
   slack: {
     T12345ABC: {
       verificationToken: '123456abcdef',
-      accessToken: 'xoxp-123-456'
+      accessToken: 'xoxp-123-456',
+      legacyToken: 'xoxp-456-123',
+      smoochBotId: 'ABCDEFGH'
     },
     T1ABCDEFG: {
       verificationToken: 'abcdef123456',
-      accessToken: 'xoxp-456-123'
+      accessToken: 'xoxp-456-123',
+      legacyToken: 'xoxp-123-456',
+      smoochBotId: 'HGFEDCBA'
     }
   },
   redisHost: 'localhost',

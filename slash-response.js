@@ -4,7 +4,8 @@ const config = require('./config.js'),
       request = require('request'),
       util = require('util'),
       qs = require('querystring'),
-      https = require('https');
+      https = require('https'),
+      imgur = require('imgur');
 
 const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, projectMediaCreatedMessage, humanAppName } = require('./helpers.js');
 
@@ -12,7 +13,9 @@ const replyToSlack = function(team, responseUrl, message, callback) {
   request.post({ url: responseUrl, json: true, body: message, headers: { 'Content-type': 'application/json' } }, function(err, res, resjson) {
     console.log('Response from Slack message update: ' + util.inspect(res));
   });
-  callback(null, message);
+  if (callback) {
+    callback(null, message);
+  }
 };
 
 const getProject = function(teamSlug, projectId, token, done, fail, callback) {
@@ -122,7 +125,7 @@ const setProject = function(payload, redisKey, callback) {
 
   const done = function(data) {
     const value = { team_slug: teamSlug, project_id: data.project.dbid, project_title: data.project.title, project_url: payload.matches[0]};
-    const message = { text: t('project_set') + ': ' + value['project_url'], response_type: 'ephemeral' };
+    const message = { text: t('project_set') + ': ' + value['project_url'], response_type: 'in_channel' };
 
     const success = function() {
       replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
@@ -155,6 +158,85 @@ const showProject = function(payload, redisKey, callback) {
   });
 };
 
+const reactivateBot = function(payload, redisKey, callback, action) {
+  let message = ''
+  const redis = getRedisClient();
+  redis.on('connect', function() {
+    redis.get(redisKey, function(err, reply) {
+      if (!reply) {
+        console.log('Could not find Redis key for channel' + ' #' + payload.body.channel_name);
+        message = { text: t('this_channel_is_not_related_to_a_bot_conversation'), response_type: 'ephemeral' };
+        replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
+      }
+      else {
+        const data = JSON.parse(reply.toString());
+        if (data.mode === 'human') {
+          const newData = Object.assign({}, data);
+          newData.mode = 'bot';
+          redis.set(redisKey, JSON.stringify(newData), function() {
+            message = { text: t('conversation_is_now_in_bot_mode'), response_type: 'in_channel' };
+
+            const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
+              updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+                project {
+                  id
+                }
+              }
+            }`;
+
+            const done = function() {
+              console.log(message.text);
+              callback(null, message);
+            }
+            
+            const token = config.checkApi.apiKey;
+            executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
+            replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
+          });
+        }
+        else {
+          message = { text: t('conversation_is_already_in_bot_mode'), response_type: 'ephemeral' };
+          console.log(message.text);
+          replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
+        }
+      }
+      redis.quit();
+    });
+  });
+};
+
+const sendSmoochImage = function(payload, callback) {
+  const teamConfig = getTeamConfig(payload.body.team_id);
+  const token = teamConfig.legacyToken;
+  payload.body.files.forEach(function(file) {
+    request({
+      url: file.url_private,
+      encoding: null,
+      headers: {
+        'Authorization': 'Bearer ' + teamConfig.legacyToken
+      }
+    }, function(err, res, body) {
+      if (!err) {
+        const data = Buffer.from(body).toString('base64');
+        imgur.uploadBase64(data)
+        .then(function(json) {
+          const link = json.data.link;
+          const text = payload.body.text.replace(/^\/sk /, '');
+          const message = { token: teamConfig.legacyToken, channel: payload.body.channel, command: '/sk', text: '![' + text + '](' + link + ')' };
+          const query = qs.stringify(message);
+          https.get('https://slack.com/api/chat.command?' + query, function() {
+            callback(null);
+          });
+          console.log('Sent image: ' + link);
+        });
+      }
+      else {
+        console.log('Could not send image');
+      }
+    });
+  });
+};
+
 const showTips = function(payload, callback) {
   let message = {
     response_type: 'ephemeral',
@@ -176,6 +258,16 @@ const showTips = function(payload, callback) {
         fallback: t('send_the_URL_to') + ' ' + humanAppName() + '. ' + t('a_default_project_for_this_channel_must_be_already_defined') + ':\n `' + payload.body.command + ' [URL]`'
       },
       {
+        text: t('reactivate_Smooch_bot_for_this_conversation') + ':\n `' + payload.body.command + ' bot activate`',
+        mrkdwn_in: ['text'],
+        fallback: t('reactivate_Smooch_bot_for_this_conversation') + ':\n `' + payload.body.command + ' bot activate`',
+      },
+      {
+        text: t('reactivate_Smooch_bot_for_this_conversation_and_send_last_user_message_to_it') + ':\n `' + payload.body.command + ' bot passthru`',
+        mrkdwn_in: ['text'],
+        fallback: t('reactivate_Smooch_bot_for_this_conversation_and_send_last_user_message_to_it') + ':\n `' + payload.body.command + ' bot passthru`',
+      },
+      {
         text: t('Or_see_our_detailed_user_guide') + ' ' + 'https://medium.com/meedan-user-guides/add-to-check-from-slack-5fee91dadc35',
         mrkdwn_in: ['text'],
         fallback: t('Or_see_our_detailed_user_guide') + ' ' + 'https://medium.com/meedan-user-guides/add-to-check-from-slack-5fee91dadc35'
@@ -186,6 +278,7 @@ const showTips = function(payload, callback) {
 
 exports.handler = function(event, context, callback) {
   const redisKey = 'slack_channel_project:' + config.redisPrefix + ':' + event.body.channel_id;
+  const smoochRedisKey = 'slack_channel_smooch:' + config.redisPrefix + ':' + event.body.channel_id;
   switch (event.type) {
     case 'createProjectMedia':
       addUrl(event, redisKey, callback);
@@ -195,6 +288,15 @@ exports.handler = function(event, context, callback) {
       break;
     case 'showProject':
       showProject(event, redisKey, callback);
+      break;
+    case 'reactivateBot':
+      reactivateBot(event, smoochRedisKey, callback, 'reactivate');
+      break;
+    case 'passthruBot':
+      reactivateBot(event, smoochRedisKey, callback, 'passthru');
+      break;
+    case 'sendSmoochImage':
+      sendSmoochImage(event, callback);
       break;
     default:
       showTips(event, callback);

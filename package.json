@@ -4,11 +4,13 @@
   "description": "A Check bot for Slack",
   "main": "index.js",
   "dependencies": {
+    "atob": "^2.1.2",
     "aws-sdk": "^2.142.0",
     "basic-auth-header": "^1.0.1",
     "btoa": "^1.1.2",
     "cheerio": "^1.0.0-rc.2",
     "html-entities": "^1.2.1",
+    "imgur": "^0.3.1",
     "lokka": "^1.7.0",
     "lokka-transport-http": "^1.6.1",
     "node-fetch": "^2.1.1",
@@ -17,12 +19,12 @@
     "util": "^0.10.3"
   },
   "devDependencies": {
-    "aws-sdk-mock": "^1.7.0",
+    "aws-sdk-mock": "^3.2.0",
     "codeclimate-test-reporter": "^0.5.0",
-    "jest": "^22.4.2"
+    "jest": "^22.4.4"
   },
   "scripts": {
-    "test": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest --coverage --collectCoverageFrom=*.js --collectCoverageFrom=!test-helpers.js; code=$?; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
+    "test": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest --coverage --collectCoverageFrom=*.js --collectCoverageFrom=!test-helpers.js --collectCoverageFrom=!server.js; code=$?; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
     "build": "npm i && rm -f dist/aws_lambda_functions.zip && zip -q -x ./dist/* -r ./aws_lambda_functions.zip * && mv aws_lambda_functions.zip ./dist/ && echo \"----------\" && echo \"Now upload aws_lambda_functions.zip to AWS Lambda\""
   },
   "jest": {

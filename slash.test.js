@@ -183,3 +183,58 @@ test('call slash-response by default when not present on config', async () => {
   expect(callback).toHaveBeenCalledWith(null, '');
   config.slashResponseFunctionName = functionName;
 });
+
+test('reactivate Smooch bot', async () => {
+  const user = await apiData();
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=bot activate"};
+  const callback = jest.fn();
+  const context = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  slash.handler(data, context, callback);
+  await sleep(3);
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Reactivating bot for this conversation'));
+});
+
+test('passthru Smooch bot', async () => {
+  const user = await apiData();
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=bot passthru"};
+  const callback = jest.fn();
+  const context = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  slash.handler(data, context, callback);
+  await sleep(3);
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Reactivating bot for this conversation and sending last message to it'));
+});
+
+test('call Lambda function locally when calling command', async () => {
+  const user = await apiData();
+  const data = { team_id: 'T12345ABC', token: '123456abcdef', user_id: user.data.uid, text: 'help' };
+  const callback = jest.fn();
+  const context = jest.fn();
+
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+ 
+  const functionName = config.slashResponseFunctionName;
+  config.slashResponseFunctionName = false;
+  const awsRegion = config.awsRegion;
+  config.awsRegion = 'local'; 
+
+  slash.handler(data, context, callback);
+  await sleep(3);
+  
+  expect(callback).toHaveBeenCalledWith(null, '');
+  expect(outputData).toMatch('Calling local function');
+  
+  config.slashResponseFunctionName = functionName;
+  config.awsRegion = awsRegion;
+});
