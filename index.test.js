@@ -522,3 +522,17 @@ test('get annotation related to Smooch conversation', async () => {
   expect(outputData).toMatch('Could not find application name and phone number');
   expect(callback).toHaveBeenCalledWith(null);
 });
+
+test('avoid parsing the same Slack event more than once', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+  
+  const event = { body: 'Test', headers: { 'X-Slack-Retry-Num': 2, 'X-Slack-Retry-Reason': 'http_timeout' } };
+  const callback = jest.fn();
+  index.handler(event, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Ignoring duplicated event');
+  expect(callback).toHaveBeenCalledWith(null);
+});

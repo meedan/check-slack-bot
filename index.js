@@ -579,6 +579,7 @@ exports.handler = function(event, context, callback) {
     data = event.body;
   }
   if (event.headers && event.headers['X-Slack-Retry-Num'] && event.headers['X-Slack-Retry-Reason'] === 'http_timeout') {
+    console.log('Ignoring duplicated event');
     callback(null);
   }
   else {
