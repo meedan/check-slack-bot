@@ -573,18 +573,27 @@ const markTranslationAsError = function(event, data, token, callback, done) {
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 };
 
-exports.handler = function(data, context, callback) {
-  switch (data.type) {
-    case 'url_verification':
-      verify(data, callback);
-      break;
-    case 'event_callback':
-      const teamConfig = getTeamConfig(data.team_id);
-      teamConfig.teamId = data.team_id;
-      ACCESS_TOKEN = teamConfig.accessToken;
-      process(data.event, callback, teamConfig);
-      break;
-    default:
-      callback(null);
+exports.handler = function(event, context, callback) {
+  let data = event;
+  if (event.headers && event.body) {
+    data = event.body;
+  }
+  if (event.headers && event.headers['X-Slack-Retry-Num'] && event.headers['X-Slack-Retry-Reason'] === 'http_timeout') {
+    callback(null);
+  }
+  else {
+    switch (data.type) {
+      case 'url_verification':
+        verify(data, callback);
+        break;
+      case 'event_callback':
+        const teamConfig = getTeamConfig(data.team_id);
+        teamConfig.teamId = data.team_id;
+        ACCESS_TOKEN = teamConfig.accessToken;
+        process(data.event, callback, teamConfig);
+        break;
+      default:
+        callback(null);
+    }
   }
 };

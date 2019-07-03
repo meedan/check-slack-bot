@@ -29,7 +29,19 @@ The steps below reference the **white** circles on the diagram above.
 * Install the dependencies with `npm i` and generate a ZIP package with `npm run build`
 * The same `./dist/aws_lambda_functions.zip` file that was generated should be uploaded to five lambda functions **[2]**. The following sections explain how those five functions should be created.
 * Create a Lambda function called `check-slack-bot`, whose handler is `index.handler`. It should use subnets `B`, `C` and `D`. **[3]**
-* Add a trigger to this Lambda function, of type "API Gateway". The API should have a single endpoint, that accepts only `POST` requests. Remember to deploy your API once done. **[4]**
+* Add a trigger to this Lambda function, of type "API Gateway". The API should have a single endpoint, that accepts only `POST` requests. **[4]**
+* Add a `Mapping Template` to your API `POST` method for the content type `application/json`. The contents of the template should be:
+```
+{
+  "body" : $input.json('$'),
+  "headers": {
+    #foreach($param in $input.params().header.keySet())
+      "$param": "$util.escapeJavaScript($input.params().header.get($param))" #if($foreach.hasNext),#end         
+    #end
+  }
+}
+```
+* Remember to re-deploy the API after that. **[4]**
 * Create a Lambda function called `check-slack-bot-buttons`, whose handler is `buttons.handler`. It should use subnets `B`, `C` and `D`. **[5]**
 * Add a trigger to this Lambda function, of type "API Gateway". The API should have a single endpoint, that accepts only `POST` requests. By default, the AWS API Gateway only accepts `application/json` requests, but Slack is going to send `application/x-www-form-urlencoded` requests when a message button is clicked. So, add a `Body Mapping Template` to your API `POST` method for the content type `application/x-www-form-urlencoded`. The contents of the template should be `{ "body": "$input.body" }`. Also, under the "Binary Support" section, add `application/x-www-form-urlencoded` as a content type to be considered binary input. Remember to deploy your API once all those things are done. **[6]**
 * Create a Lambda function called `google-image-search`, whose handler is `google-image-search.handler` **[7]**

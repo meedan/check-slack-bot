@@ -32,7 +32,7 @@ functions.forEach(function(name) {
     else {
       console.log(util.inspect(headers));
       console.log(util.inspect(data));
-      lambda(data, { source: 'local' }, generateCallback(response));
+      lambda({ body: data, headers }, { source: 'local' }, generateCallback(response));
       console.log('--------------------------------------------------------------------------------------');
     }
   });
