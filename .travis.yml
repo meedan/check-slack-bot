@@ -12,6 +12,7 @@ addons:
   postgresql: '9.4'
   hosts:
     - api.test
+    - minio
 cache:
   directories:
     - 'node_modules'
