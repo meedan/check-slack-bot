@@ -18,12 +18,13 @@ test('search for image', async () => {
   console['log'] = jest.fn(storeLog);
 
   const callback = jest.fn();
+  const t = new Date().getTime();
   const data = {
     channel: {
       id: 123
     },
-    thread_ts: new Date().getTime(),
-    image_url: 'https://ca.ios.ba/files/others/tree.jpg'
+    thread_ts: t,
+    image_url: 'https://ca.ios.ba/files/others/tree.jpg?t=' + t
   };
   gis.handler(data, null, callback);
   await sleep(timeout);
