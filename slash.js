@@ -30,10 +30,10 @@ const process = function(body, token, callback) {
   let action = '';
   if (projectUrl = setProjectRegexp.exec(body.text)) {
     const projectRegexp = new RegExp(config.checkWeb.url + '/([^/]+)/project/([0-9]+)', 'g');
-      if (matches = projectRegexp.exec(projectUrl[1])) {
-        text = t('setting_project...');
-        action = 'setProject';
-      } else { text = t('invalid_project_URL') + ': ' + projectUrl[1]; }
+    if (matches = projectRegexp.exec(projectUrl[1])) {
+      text = t('setting_project...');
+      action = 'setProject';
+    } else { text = t('invalid_project_URL') + ': ' + projectUrl[1]; }
   } else if (matches = showProjectRegexp.exec(body.text)) {
     text = t('getting_project...');
     action = 'showProject';
@@ -75,15 +75,20 @@ exports.handler = function(event, context, callback) {
   const body = config.awsRegion === 'local' ? event : qs.parse(decodeURIComponent(event.body));
   const teamConfig = getTeamConfig(body.team_id);
   if (body.token === teamConfig.verificationToken) {
-    getCheckSlackUser(body.user_id,
-      function(err) {
-        console.log('Error when trying to identify Slack user: ' + util.inspect(err));
-        permissionError(callback);
-      },
-      function(token) {
-        console.log('Successfully identified as Slack user with token: ' + token);
-        process(body, token, callback);
-    });
+    if (/^bot /.test(body.text) || body.text === '') {
+      process(body, '', callback);
+    }
+    else {
+      getCheckSlackUser(body.user_id,
+        function(err) {
+          console.log('Error when trying to identify Slack user: ' + util.inspect(err));
+          permissionError(callback);
+        },
+        function(token) {
+          console.log('Successfully identified as Slack user with token: ' + token);
+          process(body, token, callback);
+      });
+    }
   } else {
     console.log('Invalid request token: ' + body.token);
     permissionError(callback);

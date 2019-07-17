@@ -281,17 +281,27 @@ test('send Smooch image', async () => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
   const callback = jest.fn();
+  
+  const channel = buildRandomString();
 
-  const data = { body: { text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
+  const data = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
   sr.handler(data, null, callback);
   await sleep(5);
-
-  expect(outputData).toMatch('Sent image: https://i.imgur.com');
-
-  const data2 = { body: { text: '/sk Test', files: [{ url_private: 'https://notavalidimageurl.xyz' }] }, type: 'sendSmoochImage' };
-  sr.handler(data2, null, callback);
+  expect(outputData).toMatch('Not found in Redis');
+    
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':' + channel;
+  const value = JSON.stringify({ foo: 'bar' });
+  await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
+  const data2 = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
+  sr.handler(data2, null, callback);
+  await sleep(5);
+  expect(outputData).toMatch('Sent image: https://i.imgur.com');
+
+  const data3 = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://notavalidimageurl.xyz' }] }, type: 'sendSmoochImage' };
+  sr.handler(data3, null, callback);
+  await sleep(3);
   expect(outputData).toMatch('Could not send image');
 });
 

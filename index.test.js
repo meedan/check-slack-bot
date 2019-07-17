@@ -496,18 +496,23 @@ test('get annotation related to Smooch conversation', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
+
+  const phone = new Date().getTime().toString();
+  const event = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: ' + phone }] }] };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(20);
+  expect(callback).toHaveBeenCalledWith(null);
+  expect(outputData).toMatch('Could not get an annotation from Check related to the user');
   
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const phone = new Date().getTime().toString();
   const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone, app_name: 'Test' }) });
   const id = atob(annotation.data.graphql_id).split('/')[1];
 
-  const event = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: ' + phone }] }] };
-  const data = buildData('123456abcdef', 'event_callback', event);
-  const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(3);
 

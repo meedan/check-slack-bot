@@ -206,33 +206,46 @@ const reactivateBot = function(payload, redisKey, callback, action) {
 };
 
 const sendSmoochImage = function(payload, callback) {
-  const teamConfig = getTeamConfig(payload.body.team_id);
-  const token = teamConfig.legacyToken;
-  payload.body.files.forEach(function(file) {
-    request({
-      url: file.url_private,
-      encoding: null,
-      headers: {
-        'Authorization': 'Bearer ' + teamConfig.legacyToken
-      }
-    }, function(err, res, body) {
-      if (!err) {
-        const data = Buffer.from(body).toString('base64');
-        imgur.uploadBase64(data)
-        .then(function(json) {
-          const link = json.data.link;
-          const text = payload.body.text.replace(/^\/sk /, '');
-          const message = { token: teamConfig.legacyToken, channel: payload.body.channel, command: '/sk', text: '![' + text + '](' + link + ')' };
-          const query = qs.stringify(message);
-          https.get('https://slack.com/api/chat.command?' + query, function() {
-            callback(null);
+  const redis = getRedisClient();
+  redis.on('connect', function() {
+    const redisKey = 'slack_channel_smooch:' + config.redisPrefix + ':' + payload.body.channel;
+    redis.get(redisKey, function(err, reply) {
+      if (reply) {
+        const teamConfig = getTeamConfig(payload.body.team_id);
+        const token = teamConfig.legacyToken;
+        payload.body.files.forEach(function(file) {
+          request({
+            url: file.url_private,
+            encoding: null,
+            headers: {
+              'Authorization': 'Bearer ' + teamConfig.legacyToken
+            }
+          }, function(err2, res, body) {
+            if (!err2) {
+              const data = Buffer.from(body).toString('base64');
+              imgur.uploadBase64(data)
+              .then(function(json) {
+                const link = json.data.link;
+                const text = payload.body.text.replace(/^\/sk /, '');
+                const message = { token: teamConfig.legacyToken, channel: payload.body.channel, command: '/sk', text: '![' + text + '](' + link + ')' };
+                const query = qs.stringify(message);
+                https.get('https://slack.com/api/chat.command?' + query, function() {
+                  callback(null);
+                });
+                console.log('Sent image: ' + link);
+              });
+            }
+            else {
+              console.log('Could not send image');
+            }
           });
-          console.log('Sent image: ' + link);
         });
       }
       else {
-        console.log('Could not send image');
+        console.log('Not found in Redis: ' + redisKey);
+        callback(null);
       }
+      redis.quit();
     });
   });
 };
