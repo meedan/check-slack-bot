@@ -11,6 +11,7 @@
     "cheerio": "^1.0.0-rc.2",
     "html-entities": "^1.2.1",
     "imgur": "^0.3.1",
+    "js-md5": "^0.7.3",
     "lokka": "^1.7.0",
     "lokka-transport-http": "^1.6.1",
     "node-fetch": "^2.1.1",

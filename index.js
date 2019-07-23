@@ -3,6 +3,7 @@ const config = require('./config.js'),
       request = require('request'),
       qs = require('querystring'),
       aws = require('aws-sdk'),
+      md5 = require('js-md5'),
       util = require('util');
 let ACCESS_TOKEN = null;
       
@@ -206,6 +207,13 @@ const process = function(event, callback, teamConfig) {
       }
       if (field.title === 'Device Info') {
         phoneNumber = field.value.match(/Phone Number: (.*)/)[1];
+        
+        // Clean up if it's a link
+        if (/\|/.test(phoneNumber)) {
+          phoneNumber = decodeURIComponent(phoneNumber.split('|')[1]).replace('>', '');
+        }
+
+        phoneNumber = md5(phoneNumber);
       }
     });
     if (appName && phoneNumber) {

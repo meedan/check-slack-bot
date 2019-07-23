@@ -3,6 +3,7 @@ const btoa = require('btoa');
 const atob = require('atob');
 let aws = require('aws-sdk');
 const awsMock = require('aws-sdk-mock');
+const md5 = require('js-md5');
 let config = require('./config');
 const index = require('./index');
 const {
@@ -497,34 +498,55 @@ test('get annotation related to Smooch conversation', async () => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
+  outputData = ''
   const phone = new Date().getTime().toString();
   const event = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: ' + phone }] }] };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(20);
+  
   expect(callback).toHaveBeenCalledWith(null);
   expect(outputData).toMatch('Could not get an annotation from Check related to the user');
   
+  outputData = ''
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone, app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: md5(phone), app_name: 'Test' }) });
   const id = atob(annotation.data.graphql_id).split('/')[1];
-
   index.handler(data, null, callback);
   await sleep(3);
 
   expect(outputData).toMatch('Associated with annotation ' + id);
   expect(callback).toHaveBeenCalledWith(null);
 
+  outputData = ''
   const event2 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'Foo', value: 'Bar' }] }] };
   const data2 = buildData('123456abcdef', 'event_callback', event2);
   index.handler(data2, null, callback);
   await sleep(3);
 
   expect(outputData).toMatch('Could not find application name and phone number');
+  expect(callback).toHaveBeenCalledWith(null);
+  
+  outputData = ''
+  const event3 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: \u003ctel:' + phone + '|' + phone + '\u003e' }] }] };
+  const data3 = buildData('123456abcdef', 'event_callback', event3);
+  index.handler(data3, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Associated with annotation ' + id);
+  expect(callback).toHaveBeenCalledWith(null);
+
+  outputData = ''
+  const event4 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp | Phone Number: <tel:' + phone + '|' + phone + '>' }] }] };
+  const data4 = buildData('123456abcdef', 'event_callback', event4);
+  index.handler(data4, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Associated with annotation ' + id);
   expect(callback).toHaveBeenCalledWith(null);
 });
 
