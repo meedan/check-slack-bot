@@ -504,7 +504,7 @@ test('get annotation related to Smooch conversation', async () => {
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
-  await sleep(20);
+  await sleep(120);
   
   expect(callback).toHaveBeenCalledWith(null);
   expect(outputData).toMatch('Could not get an annotation from Check related to the user');
