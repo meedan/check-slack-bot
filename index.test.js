@@ -15,7 +15,7 @@ const {
 
 const { humanAppName } = require('./helpers');
 
-jest.setTimeout(120000);
+jest.setTimeout(300000);
 
 const buildData = (token, type, event) => {
   const data = {
@@ -504,7 +504,7 @@ test('get annotation related to Smooch conversation', async () => {
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
-  await sleep(120);
+  await sleep(200);
   
   expect(callback).toHaveBeenCalledWith(null);
   expect(outputData).toMatch('Could not get an annotation from Check related to the user');
