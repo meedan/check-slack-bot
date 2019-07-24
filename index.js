@@ -222,9 +222,9 @@ const process = function(event, callback, teamConfig) {
       let n = 0;
 
       const fieldCallback = function(resp) {
-        if (!resp && n < 15) {
+        if (!resp && n < 20) {
           n++;
-          setTimeout(function() { getField(query, callback, fieldCallback) }, 1000);
+          setTimeout(function() { getField(query, callback, fieldCallback) }, 5000);
         }
         else if (resp) {
           const projectUrl = resp.annotation.project.url;
