@@ -25,7 +25,7 @@ const process = function(body, token, callback) {
   const showProjectRegexp = new RegExp(/^show/, 'g');
   const addUrlRegexp = new RegExp(/<(.+)>/, 'g');
   const activateBotRegexp = new RegExp(/^bot activate/, 'g');
-  const passthruBotRegexp = new RegExp(/^bot passthru/, 'g');
+  const sendBotRegexp = new RegExp(/^bot send (.*)/, 'g');
 
   let action = '';
   if (projectUrl = setProjectRegexp.exec(body.text)) {
@@ -43,9 +43,9 @@ const process = function(body, token, callback) {
   } else if (activateBotRegexp.test(body.text)) {
     text = t('reactivating_bot_for_this_conversation');
     action = 'reactivateBot';
-  } else if (passthruBotRegexp.test(body.text)) {
-    text = t('reactivating_bot_for_this_conversation_and_sending_last_message_to_it');
-    action = 'passthruBot';
+  } else if (matches = sendBotRegexp.exec(body.text)) {
+    text = t('sending_message_to_the_bot') + ': ' + matches[1];
+    action = 'sendBot';
   } else {
     text = '';
     action = 'showTips';

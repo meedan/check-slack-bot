@@ -158,7 +158,7 @@ const showProject = function(payload, redisKey, callback) {
   });
 };
 
-const reactivateBot = function(payload, redisKey, callback, action) {
+const sendActionToSmoochBot = function(payload, redisKey, callback, action) {
   let message = ''
   const redis = getRedisClient();
   redis.on('connect', function() {
@@ -170,34 +170,56 @@ const reactivateBot = function(payload, redisKey, callback, action) {
       }
       else {
         const data = JSON.parse(reply.toString());
-        if (data.mode === 'human') {
-          const newData = Object.assign({}, data);
-          newData.mode = 'bot';
-          redis.set(redisKey, JSON.stringify(newData), function() {
-            message = { text: t('conversation_is_now_in_bot_mode'), response_type: 'in_channel' };
+        if (action === 'send') {
+          message = { text: t('message_sent_to_the_bot'), response_type: 'in_channel' };
 
-            const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
-              updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
-                project {
-                  id
-                }
+          const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
+            updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+              project {
+                id
               }
-            }`;
-
-            const done = function() {
-              console.log(message.text);
-              callback(null, message);
             }
-            
-            const token = config.checkApi.apiKey;
-            executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
-            replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
-          });
+          }`;
+
+          const done = function() {
+            console.log(message.text);
+            callback(null, message);
+          }
+          
+          const token = config.checkApi.apiKey;
+          executeMutation(mutationQuery, { action: 'send ' + payload.matches[1], id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
+          replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
         }
         else {
-          message = { text: t('conversation_is_already_in_bot_mode'), response_type: 'ephemeral' };
-          console.log(message.text);
-          replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
+          if (data.mode === 'human') {
+            const newData = Object.assign({}, data);
+            newData.mode = 'bot';
+            redis.set(redisKey, JSON.stringify(newData), function() {
+              message = { text: t('conversation_is_now_in_bot_mode'), response_type: 'in_channel' };
+
+              const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
+                updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+                  project {
+                    id
+                  }
+                }
+              }`;
+
+              const done = function() {
+                console.log(message.text);
+                callback(null, message);
+              }
+              
+              const token = config.checkApi.apiKey;
+              executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
+              replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
+            });
+          }
+          else {
+            message = { text: t('conversation_is_already_in_bot_mode'), response_type: 'ephemeral' };
+            console.log(message.text);
+            replyToSlack(payload.body.team_id, payload.body.response_url, message, callback);
+          }
         }
       }
       redis.quit();
@@ -276,9 +298,9 @@ const showTips = function(payload, callback) {
         fallback: t('reactivate_Smooch_bot_for_this_conversation') + ':\n `' + payload.body.command + ' bot activate`',
       },
       {
-        text: t('reactivate_Smooch_bot_for_this_conversation_and_send_last_user_message_to_it') + ':\n `' + payload.body.command + ' bot passthru`',
+        text: t('send_message_to_Smooch_bot') + ':\n `' + payload.body.command + ' bot send [message]`',
         mrkdwn_in: ['text'],
-        fallback: t('reactivate_Smooch_bot_for_this_conversation_and_send_last_user_message_to_it') + ':\n `' + payload.body.command + ' bot passthru`',
+        fallback: t('send_message_to_Smooch_bot') + ':\n `' + payload.body.command + ' bot send [message]`',
       },
       {
         text: t('Or_see_our_detailed_user_guide') + ' ' + 'https://medium.com/meedan-user-guides/add-to-check-from-slack-5fee91dadc35',
@@ -303,10 +325,10 @@ exports.handler = function(event, context, callback) {
       showProject(event, redisKey, callback);
       break;
     case 'reactivateBot':
-      reactivateBot(event, smoochRedisKey, callback, 'reactivate');
+      sendActionToSmoochBot(event, smoochRedisKey, callback, 'reactivate');
       break;
-    case 'passthruBot':
-      reactivateBot(event, smoochRedisKey, callback, 'passthru');
+    case 'sendBot':
+      sendActionToSmoochBot(event, smoochRedisKey, callback, 'send');
       break;
     case 'sendSmoochImage':
       sendSmoochImage(event, callback);

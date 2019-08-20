@@ -199,9 +199,9 @@ test('reactivate Smooch bot', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Reactivating bot for this conversation'));
 });
 
-test('passthru Smooch bot', async () => {
+test('send message to Smooch bot', async () => {
   const user = await apiData();
-  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=bot passthru"};
+  const data = { body: "team_id=T12345ABC&token=123456abcdef&user_id=" + user.data.uid + "&text=bot send Test"};
   const callback = jest.fn();
   const context = jest.fn();
 
@@ -211,7 +211,7 @@ test('passthru Smooch bot', async () => {
 
   slash.handler(data, context, callback);
   await sleep(3);
-  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Reactivating bot for this conversation and sending last message to it'));
+  expect(callback).toHaveBeenCalledWith(null, expect.stringContaining('Sending message to the bot'));
 });
 
 test('call Lambda function locally when calling command', async () => {

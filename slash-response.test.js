@@ -252,7 +252,7 @@ test('reactivate Smooch bot', async () => {
   expect(outputData).toMatch('Could not find Redis key for channel');
 });
 
-test('passthru Smooch bot', async () => {
+test('send message to Smooch bot', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
@@ -268,12 +268,12 @@ test('passthru Smooch bot', async () => {
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
-  const data = { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'passthruBot' };
+  const data = { body: { team_id: 'T12345ABC', channel_id: 'test' }, matches: ['bot send Test', 'Test'], type: 'sendBot' };
   sr.handler(data, null, callback);
   await sleep(3);
 
-  expect(outputData).toMatch('Conversation is now in bot mode');
-  expect(callback).toHaveBeenCalledWith(null, { response_type: 'in_channel', text: 'Conversation is now in bot mode' });
+  expect(outputData).toMatch('Message sent to the bot');
+  expect(callback).toHaveBeenCalledWith(null, { response_type: 'in_channel', text: 'Message sent to the bot' });
 });
 
 test('send Smooch image', async () => {
@@ -311,11 +311,12 @@ test('cannot reactivate Smooch bot', async () => {
   console['log'] = jest.fn(storeLog);
   const callback = jest.fn();
 
+  const uid = buildRandomString();
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: uid + ',test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
   await exec(`redis-cli set ${key} '${value}'`);
