@@ -5,6 +5,7 @@ const config = require('./config.js'),
       util = require('util'),
       qs = require('querystring'),
       https = require('https'),
+      CheckError = require ('./CheckError'),
       imgur = require('imgur');
 
 const { executeMutation, getRedisClient, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, projectMediaCreatedMessage, humanAppName } = require('./helpers.js');
@@ -48,7 +49,7 @@ const sendErrorMessage = function(e, vars, text, team_id, responseUrl, callback)
   const message = { response_type: "ephemeral", text: text };
   if (e.rawError && (error = e.rawError[0])) {
     let error_message = error.message;
-    if (error.data && error.data.code === 'ERR_OBJECT_EXISTS') { error_message += ': ' + error.data.url; };
+    if (error && error.code === CheckError.errors.DUPLICATED ) { error_message += ': ' + error.data.url; };
 
     message.attachments = [{
       color: 'warning',
@@ -185,7 +186,7 @@ const sendActionToSmoochBot = function(payload, redisKey, callback, action) {
             console.log(message.text);
             callback(null, message);
           }
-          
+
           const token = config.checkApi.apiKey;
           executeMutation(mutationQuery, { action: 'send ' + payload.matches[1], id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
           replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
@@ -209,7 +210,7 @@ const sendActionToSmoochBot = function(payload, redisKey, callback, action) {
                 console.log(message.text);
                 callback(null, message);
               }
-              
+
               const token = config.checkApi.apiKey;
               executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${payload.body.trigger_id}` }, null, done, token, callback, {}, {});
               replyToSlack(payload.body.team_id, payload.body.response_url, message, null);
