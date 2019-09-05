@@ -49,7 +49,7 @@ const sendErrorMessage = function(e, vars, text, team_id, responseUrl, callback)
   const message = { response_type: "ephemeral", text: text };
   if (e.rawError && (error = e.rawError[0])) {
     let error_message = error.message;
-    if (error && error.code === CheckError.errors.DUPLICATED ) { error_message += ': ' + error.data.url; };
+    if (error && error.code === CheckError.codes.DUPLICATED ) { error_message += ': ' + error.data.url; };
 
     message.attachments = [{
       color: 'warning',
