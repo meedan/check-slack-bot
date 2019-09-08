@@ -200,24 +200,32 @@ const process = function(event, callback, teamConfig) {
   
   else if (event.bot_id === teamConfig.smoochBotId && event.attachments && event.attachments[0] && event.attachments[0].fields) {
     let appName = null;
-    let phoneNumber = null;
+    let identifier = null;
     event.attachments[0].fields.forEach(function(field) {
       if (field.title === 'App') {
         appName = field.value;
       }
       if (field.title === 'Device Info') {
-        phoneNumber = field.value.match(/Phone Number: (.*)/)[1];
-        
-        // Clean up if it's a link
-        if (/\|/.test(phoneNumber)) {
-          phoneNumber = decodeURIComponent(phoneNumber.split('|')[1]).replace('>', '');
+
+        // The identifier is different depending on the platform
+        if (/WhatsApp Messenger/.test(field.value)) {
+          identifier = field.value.match(/Phone Number: (.*)/)[1];
+        }
+        else if (/Facebook Messenger/.test(field.value)) {
+          identifier = field.value.match(/psid=([0-9]+)/)[1];
+        }
+        else if (/Twitter DM/.test(field.value)) {
+          identifier = field.value.match(/profile_images\/([0-9]+)\//)[1];
         }
 
-        phoneNumber = md5(phoneNumber);
+        // Clean up if it's a link
+        if (identifier && /\|/.test(identifier)) {
+          identifier = decodeURIComponent(identifier.split('|')[1]).replace('>', '');
+        }
       }
     });
-    if (appName && phoneNumber) {
-      const query = JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: appName, phone: phoneNumber } });
+    if (appName && identifier) {
+      const query = JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: appName, identifier: md5(identifier) } });
 
       let n = 0;
 
@@ -260,7 +268,7 @@ const process = function(event, callback, teamConfig) {
       getField(query, callback, fieldCallback);
     }
     else {
-      console.log('Could not find application name and phone number');
+      console.log('Could not find application name and identifier');
       callback(null);
     }
   }

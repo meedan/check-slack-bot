@@ -216,7 +216,7 @@ test('send message to Smooch bot', async () => {
 
 test('call Lambda function locally when calling command', async () => {
   const user = await apiData();
-  const data = { team_id: 'T12345ABC', token: '123456abcdef', user_id: user.data.uid, text: 'help' };
+  const data = { body: { team_id: 'T12345ABC', token: '123456abcdef', user_id: user.data.uid, text: 'help' } };
   const callback = jest.fn();
   const context = jest.fn();
 

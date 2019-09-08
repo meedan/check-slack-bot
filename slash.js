@@ -72,7 +72,7 @@ const process = function(body, token, callback) {
 };
 
 exports.handler = function(event, context, callback) {
-  const body = config.awsRegion === 'local' ? event : qs.parse(decodeURIComponent(event.body));
+  const body = config.awsRegion === 'local' ? event.body : qs.parse(decodeURIComponent(event.body));
   const teamConfig = getTeamConfig(body.team_id);
   if (body.token === teamConfig.verificationToken) {
     if (/^bot /.test(body.text) || body.text === '') {
