@@ -6,7 +6,7 @@ const config = require('./config.js'),
       md5 = require('js-md5'),
       util = require('util');
 let ACCESS_TOKEN = null;
-      
+
 const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack } = require('./helpers.js');
 
 const getField = function(query, callback, done) {
@@ -118,7 +118,7 @@ const process = function(event, callback, teamConfig) {
   const regexp = new RegExp(checkURLPattern, 'g');
 
   // Image uploaded for Smooch user
-  
+
   if (event.type === 'message' && event.subtype === 'file_share' && /^\/sk($| )/.test(event.text)) {
     event.team_id = teamConfig.teamId;
     const functionName = config.slashResponseFunctionName || 'slash-response';
@@ -139,7 +139,7 @@ const process = function(event, callback, teamConfig) {
   // Two possible cases here:
   // 1) This message is from the Slack user to the Smooch user, so we need to move the conversation to "human mode" if it's still in "bot mode"; or
   // 2) A channel was archived, so we need to move the conversation back to "bot mode" if it's still in "human mode"
-  
+
   if (event.type === 'channel_archive' || (event.bot_id === teamConfig.smoochBotId && event.text !== '' && / replied$/.test(event.username))) {
     let mode = 'human';
     let action = 'deactivate';
@@ -175,12 +175,18 @@ const process = function(event, callback, teamConfig) {
                 callback(null);
               }
             };
-            
+
             const token = config.checkApi.apiKey;
             executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${event.ts}` }, null, done, token, callback, event, {});
-            
+
             if (event.type !== 'channel_archive') {
-              const message = { text: t('the_bot_was_deactivated_for_this_conversation'), response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
+              const message = {
+                // FIXME: Localize it with t('function') in the future
+                text: "The bot has been de-activated for this conversation. You can now communicate directly to the user in this channel. To reactivate the bot, type `/check bot activate`. <https://intercom.help/meedan/en/articles/3365307-slack-integration|Learn about more features of the Slack integration here.>",
+                response_type: 'in_channel',
+                token: ACCESS_TOKEN,
+                channel: event.channel
+              };
               const query = qs.stringify(message);
               https.get('https://slack.com/api/chat.postMessage?' + query);
             }
@@ -197,7 +203,7 @@ const process = function(event, callback, teamConfig) {
 
   // This message is from Smooch Bot when it auto-creates a channel for a user
   // We associate the Smooch Bot project with the Slack channel and store the "smooch_user" annotation related to the Slack channel
-  
+
   else if (event.bot_id === teamConfig.smoochBotId && event.attachments && event.attachments[0] && event.attachments[0].fields) {
     let appName = null;
     let identifier = null;
@@ -243,7 +249,7 @@ const process = function(event, callback, teamConfig) {
           const value = { team_slug: teamSlug, project_id: projectId, project_title: projectTitle, project_url: projectUrl };
           const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
           const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
-          
+
           const redis = getRedisClient();
           redis.on('connect', function() {
             redis.multi()
@@ -308,7 +314,7 @@ const process = function(event, callback, teamConfig) {
   }
 
   // This message is a Check report parsed by the bot
-  
+
   if (event.bot_id && event.text === '' && event.attachments && event.attachments.length > 0 && regexp.test(event.attachments[0].fallback)) {
     try {
       storeSlackMessage(event, callback);
@@ -321,16 +327,16 @@ const process = function(event, callback, teamConfig) {
   // This message is a reply to a button action
 
   if (!event.bot_id && event.thread_ts) {
-    
+
     // Look for this thread on Redis to see if it's related to any Check media
 
     const redis = getRedisClient();
     redis.get('slack_message_ts:' + config.redisPrefix + ':' + event.thread_ts, function(err, reply) {
-      
+
       if (!reply) {
         console.log('Could not find Redis key slack_message_ts:' + event.thread_ts);
       }
-      
+
       else {
         const data = JSON.parse(reply.toString());
 
@@ -339,12 +345,12 @@ const process = function(event, callback, teamConfig) {
         if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description' || /^add_translation_/.test(data.mode) || data.mode === 'translation_error')) {
 
           getCheckSlackUser(event.user,
-            
+
             function(err) {
               console.log('Error when trying to identify Slack user: ' + util.inspect(err));
               sendErrorMessage(callback, event.thread_ts, event.channel, data.link);
             },
-            
+
             function(token) {
 
               // Adding comment
@@ -375,9 +381,9 @@ const process = function(event, callback, teamConfig) {
                 markTranslationAsError(event, data, token, callback, function(resp) {
                   const obj = resp.updateDynamic.project_media;
                   obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
-                  
+
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
-                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
+                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' };
 
                   request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
                     console.log('Response from Slack message update: ' + res);
@@ -398,9 +404,9 @@ const process = function(event, callback, teamConfig) {
                 updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
                   const obj = resp.updateProjectMedia.project_media;
                   obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
-                  
+
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
-                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' }; 
+                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' };
 
                   request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
                     console.log('Response from Slack message update: ' + res);
@@ -416,7 +422,7 @@ const process = function(event, callback, teamConfig) {
           );
         }
       }
-        
+
       redis.quit();
     });
   }
@@ -442,7 +448,7 @@ const createComment = function(event, data, token, callback, done) {
       }
     }
   }`;
-  
+
   executeMutation(mutationQuery, { text: text, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
 }
 
@@ -463,7 +469,7 @@ const addTranslation = function(event, data, token, callback, done) {
       }
     }
   }`;
-  
+
   executeMutation(mutationQuery, { setFields: setFields, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
 }
 
@@ -485,14 +491,14 @@ const storeSlackMessage = function(event, callback) {
   }`;
 
   const ignore = function() { /* Do nothing */ };
-  
+
   executeMutation(mutationQuery, vars, ignore, ignore, config.checkApi.apiKey, callback, event, { team_slug: json.team_slug });
 }
 
 const updateTitleOrDescription = function(attribute, event, data, token, callback, done) {
   const id = data.graphql_id,
         text = event.text;
-  
+
   const mutationQuery = `($metadata: String!, $id: ID!, $clientMutationId: String!) {
     updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, metadata: $metadata, id: $id }) {
       project_media {
@@ -539,7 +545,7 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
 
   let metadata = {};
   metadata[attribute] = text;
-  
+
   const vars = {
     metadata: JSON.stringify(metadata),
     id: id,
@@ -551,7 +557,7 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
 
 const markTranslationAsError = function(event, data, token, callback, done) {
   const setFields = JSON.stringify({ translation_status_status: 'error', translation_status_note: event.text });
-  
+
   const vars = {
     id: data.last_status_id,
     setFields: setFields,
