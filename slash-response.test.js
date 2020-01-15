@@ -171,7 +171,7 @@ test('return error message if duplicated url and its url', async () => {
   await sleep(8);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This media already exists: ' + JSON.parse(pm.data.oembed_metadata).permalink})])}));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: 'This item already exists: ' + JSON.parse(pm.data.oembed_metadata).permalink})])}));
 });
 
 test('return error message if project is archived', async () => {
@@ -281,14 +281,14 @@ test('send Smooch image', async () => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
   const callback = jest.fn();
-  
+
   const channel = buildRandomString();
 
   const data = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
   sr.handler(data, null, callback);
   await sleep(5);
   expect(outputData).toMatch('Not found in Redis');
-    
+
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':' + channel;
   const value = JSON.stringify({ foo: 'bar' });
   await exec(`redis-cli set ${key} '${value}'`);
