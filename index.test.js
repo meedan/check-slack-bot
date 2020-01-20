@@ -514,8 +514,20 @@ test('get annotation related to Smooch conversation', async () => {
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
+
   const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: md5(identifier), app_name: 'Test' }) });
   const id = atob(annotation.data.graphql_id).split('/')[1];
+  const annotation2 = await callCheckApi('get', { class: 'dynamic', id: parseInt(id, 10), fields: 'get_fields' });
+  let value = '';
+  annotation2.data.get_fields.forEach((field) => {
+    if (field.field_name == 'smooch_user_data') {
+      value = field.id;
+    }
+  });
+
+  const key = 'dynamic-annotation-field-' + md5(JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: 'Test', identifier: md5(identifier) } }));
+  await callCheckApi('cache_key', { key, value });
+  
   index.handler(data, null, callback);
   await sleep(3);
 
