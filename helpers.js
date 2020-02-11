@@ -48,11 +48,11 @@ const formatMessageFromData = function(data) {
 
   let languages = [];
   const languagesJson = JSON.parse(data.target_languages);
-  let projectLanguages = ['en'];
-  if (data.project.get_languages) {
-    projectLanguages = JSON.parse(data.project.get_languages);
+  let teamLanguages = ['en'];
+  if (data.team.get_languages) {
+    teamLanguages = JSON.parse(data.team.get_languages);
   }
-  projectLanguages.forEach(function(code) {
+  teamLanguages.forEach(function(code) {
     languages.push({ text: languagesJson[code], value: code });
   });
 
@@ -174,7 +174,7 @@ const formatMessageFromData = function(data) {
       response_type: 'in_channel',
       replace_original: false,
       delete_original: false,
-      actions: actions 
+      actions: actions
     }
   ];
 };
@@ -223,7 +223,7 @@ const verify = function(data, callback) {
   for (let team in config.slack) {
     tokens.push(config.slack[team].verificationToken);
   }
-  
+
   if (tokens.indexOf(data.token) > -1) {
     callback(null, data.challenge);
   }

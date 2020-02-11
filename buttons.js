@@ -23,7 +23,7 @@ const changeStatus = function(data, token, callback) {
   let fields = {};
   fields[mapping[config.appName]] = status;
   const setFields = JSON.stringify(fields)
-  
+
   const vars = {
     id: value.last_status_id,
     setFields: setFields,
@@ -46,7 +46,6 @@ const changeStatus = function(data, token, callback) {
         tasks_count
         project {
           title
-          get_languages
         }
         tags {
           edges {
@@ -66,6 +65,7 @@ const changeStatus = function(data, token, callback) {
         team {
           name
           slug
+          get_languages
         }
         verification_statuses
         translation_statuses
@@ -95,7 +95,7 @@ const saveAndReply = function(data, token, callback, mode, newMessage, attachmen
 
   const success = function() {
     json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
-      
+
     const options = {
       uri: data.response_url,
       method: 'POST',
@@ -206,7 +206,7 @@ const editTitle = function(data, token, callback) {
     ],
     style: 'primary'
   };
-  
+
   saveAndReply(data, token, callback, 'edit_title', newMessage, attachments);
 };
 
@@ -233,7 +233,7 @@ const editDescription = function(data, token, callback) {
     ],
     style: 'primary'
   };
-  
+
   saveAndReply(data, token, callback, 'edit_description', newMessage, attachments);
 };
 
@@ -245,7 +245,7 @@ const imageSearch = function(data, callback, context) {
     // Invoke Lambda function to get reverse images in background, because Slack doesn't wait more than 3s
 
     aws.config.loadFromPath('./aws.json');
-    
+
     try {
       const lambda = new aws.Lambda({
         region: config.awsRegion
@@ -253,11 +253,11 @@ const imageSearch = function(data, callback, context) {
 
       const payload = JSON.stringify({ image_url: image, response_url: data.response_url, thread_ts: data.message_ts, channel: data.channel, access_token: ACCESS_TOKEN });
       const functionName = config.googleImageSearchFunctionName || 'google-image-search';
-      
+
       const lambdaRequest = lambda.invoke({ FunctionName: functionName, InvocationType: 'Event', Payload: payload });
       lambdaRequest.send();
     } catch (e) {}
-  
+
     callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_wait_while_I_look_for_similar_images_-_I_will_post_a_reply_inside_a_thread_above') });
   }
   else {
@@ -267,7 +267,7 @@ const imageSearch = function(data, callback, context) {
 
 const process = function(data, callback, context) {
   if (data.token === VERIFICATION_TOKEN) {
-    
+
     getCheckSlackUser(data.user.id,
       function(err) {
         console.log('Error when trying to identify Slack user: ' + util.inspect(err));
@@ -323,9 +323,9 @@ const process = function(data, callback, context) {
         }
       }
     );
-  
+
   }
-  
+
   else {
     error(data, callback);
   }
@@ -334,7 +334,7 @@ const process = function(data, callback, context) {
 exports.handler = function(data, context, callback) {
   const body = Buffer.from(data.body, 'base64').toString();
   const payload = JSON.parse(decodeURIComponent(body).replace(/^payload=/, ''));
-  
+
   switch (data.type) {
     case 'url_verification':
       verify(data, callback);

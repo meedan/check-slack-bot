@@ -213,7 +213,7 @@ test('identify Slack user and mark translation request as error', async () => {
   index.handler(data, null, callback);
   await sleep(10);
   expect(outputData).not.toMatch('Error when trying to identify Slack user');
-  
+
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,last_translation_status' });
   expect(pm.data.last_translation_status).toBe('error');
   expect(callback).toHaveBeenCalledWith(null);
@@ -230,7 +230,7 @@ test('parse Slack message with Check URL', async () => {
   const project = await callCheckApi('project', { team_id: team.data.dbid });
   let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
 
-  const event = { channel: 'test', text: `There is a Check URL here http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id} can you see?` };
+  const event = { channel: 'test', text: `There is a Check URL here http://localhost:3333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id} can you see?` };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -245,7 +245,7 @@ test('parse Slack message with Check URL that does not exist', async () => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
-  const event = { channel: 'test', text: 'There is a Check URL here http://localhost:13333/invalid/project/321/media/132 can you see?' };
+  const event = { channel: 'test', text: 'There is a Check URL here http://localhost:3333/invalid/project/321/media/132 can you see?' };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -280,7 +280,7 @@ test('parse Slack message with bot message', async () => {
   let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
 
   const callback_id = JSON.stringify({ id: pm.data.id, team_slug: team.data.slug });
-  const event = { ts: '123456', bot_id: 'abc', channel: 'test', text: '', attachments: [{ fallback: 'http://localhost:13333/invalid/project/321/media/132', callback_id }] };
+  const event = { ts: '123456', bot_id: 'abc', channel: 'test', text: '', attachments: [{ fallback: 'http://localhost:3333/invalid/project/321/media/132', callback_id }] };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
 
@@ -307,7 +307,7 @@ test('parse Slack message with Check URL posted by slash bot', async () => {
   const url = 'https://ca.ios.ba/'
   let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
 
-  const event = { channel: 'test', bot_id: config.bot_id, text: `URL successfully added to ${humanAppName()}: <http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}>` };
+  const event = { channel: 'test', bot_id: config.bot_id, text: `URL successfully added to ${humanAppName()}: <http://localhost:3333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}>` };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -329,7 +329,7 @@ test('ignore Slack message with Check URL and `|` posted by bot', async () => {
   const url = 'https://ca.ios.ba/'
   let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
 
-  const event = { channel: 'test', bot_id: 'abc', text: `*John* answered task <http://localhost:13333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}|Agree?> in *Doe Project*: \n&gt;No\n` };
+  const event = { channel: 'test', bot_id: 'abc', text: `*John* answered task <http://localhost:3333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}|Agree?> in *Doe Project*: \n&gt;No\n` };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -411,7 +411,7 @@ test('call Lambda function when image is uploaded to Smooch conversation', async
   awsMock.mock('Lambda', 'invoke', function({}) { console.log('AWS Mocked Method'); });
   index.handler(data, null, callback);
   await sleep(3);
-  
+
   expect(outputData).toMatch('AWS Mocked Method');
   expect(callback).toHaveBeenCalledWith(null);
 });
@@ -420,18 +420,18 @@ test('call Lambda function locally when image is uploaded to Smooch conversation
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
- 
+
   const functionName = config.slashResponseFunctionName;
   config.slashResponseFunctionName = false;
   const awsRegion = config.awsRegion;
-  config.awsRegion = 'local'; 
+  config.awsRegion = 'local';
 
   const event = { type: 'message', subtype: 'file_share', text: '/sk Sending image', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(3);
-  
+
   expect(outputData).toMatch('Calling local function');
   expect(callback).toHaveBeenCalledWith(null);
   config.slashResponseFunctionName = functionName;
@@ -442,7 +442,7 @@ test('move Smooch conversation to "human mode" in Smooch conversation', async ()
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
-  
+
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
@@ -467,7 +467,7 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
-  
+
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
@@ -505,10 +505,10 @@ test('get annotation related to Smooch conversation', async () => {
   const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(200);
-  
+
   expect(callback).toHaveBeenCalledWith(null);
   expect(outputData).toMatch('Could not get an annotation from Check related to the user');
-  
+
   outputData = ''
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
@@ -527,7 +527,7 @@ test('get annotation related to Smooch conversation', async () => {
 
   const key = 'dynamic-annotation-field-' + md5(JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: 'Test', identifier: md5(identifier) } }));
   await callCheckApi('cache_key', { key, value });
-  
+
   index.handler(data, null, callback);
   await sleep(3);
 
@@ -542,7 +542,7 @@ test('get annotation related to Smooch conversation', async () => {
 
   expect(outputData).toMatch('Could not find application name and identifier');
   expect(callback).toHaveBeenCalledWith(null);
-  
+
   outputData = ''
   const event3 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: \u003ctel:' + identifier + '|' + identifier + '\u003e' }] }] };
   const data3 = buildData('123456abcdef', 'event_callback', event3);
@@ -590,7 +590,7 @@ test('avoid parsing the same Slack event more than once', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
-  
+
   const event = { body: 'Test', headers: { 'X-Slack-Retry-Num': 2, 'X-Slack-Retry-Reason': 'http_timeout' } };
   const callback = jest.fn();
   index.handler(event, null, callback);

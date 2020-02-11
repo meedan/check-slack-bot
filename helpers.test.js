@@ -32,11 +32,11 @@ test('connect to GraphQL', async () => {
 });
 
 test('translate string', () => {
-  expect(t('foo_bar')).toBe('Foo bar'); 
+  expect(t('foo_bar')).toBe('Foo bar');
 });
 
 test('translate string with capitals', () => {
-  expect(t('foo_bar', true)).toBe('Foo Bar'); 
+  expect(t('foo_bar', true)).toBe('Foo Bar');
 });
 
 test('format message from Check API data', async () => {
@@ -112,8 +112,7 @@ test('format message from Check API data that contain a picture', async () => {
     created_at: new Date(),
     updated_at: new Date(),
     project: {
-      title: 'Test',
-      get_languages: '["en"]'
+      title: 'Test'
     },
     tasks_count: {
       all: 3,
@@ -127,7 +126,8 @@ test('format message from Check API data that contain a picture', async () => {
     },
     team: {
       name: 'Test Team',
-      slug: 'test'
+      slug: 'test',
+      get_languages: '["en"]'
     },
     last_status_obj: {
       id: 1

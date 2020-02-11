@@ -57,7 +57,6 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       tasks_count
       project {
         title
-        get_languages
       }
       tags {
         edges {
@@ -77,6 +76,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       team {
         name
         slug
+        get_languages
       }
       verification_statuses
       translation_statuses
@@ -515,7 +515,6 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
         tasks_count
         project {
           title
-          get_languages
         }
         tags {
           edges {
@@ -535,6 +534,7 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
         team {
           name
           slug
+          get_languages
         }
         verification_statuses
         translation_statuses
@@ -582,7 +582,6 @@ const markTranslationAsError = function(event, data, token, callback, done) {
         tasks_count
         project {
           title
-          get_languages
         }
         tags {
           edges {
@@ -602,6 +601,7 @@ const markTranslationAsError = function(event, data, token, callback, done) {
         team {
           name
           slug
+          get_languages
         }
         verification_statuses
         translation_statuses
