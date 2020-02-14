@@ -73,11 +73,6 @@ const formatMessageFromData = function(data) {
       title: t('last_update', true),
       value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
       short: true
-    },
-    {
-      title: t('project'),
-      value: data.project.title,
-      short: true
     }
   ];
 
@@ -120,16 +115,6 @@ const formatMessageFromData = function(data) {
       ]
     }
   ];
-
-  if (config.appName === 'bridge') {
-    actions.push({
-      name: 'add_translation',
-      text: t('add_translation', true),
-      type: 'select',
-      style: 'primary',
-      options: languages
-    });
-  }
 
   if (data.oembed_metadata.picture && /^http/.test(data.oembed_metadata.picture)) {
     actions.push({

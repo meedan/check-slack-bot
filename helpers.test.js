@@ -54,23 +54,6 @@ test('format message from Check API data', async () => {
   const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
 });
 
-test('format message from Check API data for Bridge', async () => {
-  config.appName = 'bridge';
-  const email = buildRandomString() + '@test.com';
-  const user = await callCheckApi('user', { email });
-  const team = await callCheckApi('team', { email });
-  const project = await callCheckApi('project', { team_id: team.data.dbid });
-  let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
-  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,last_status_obj,last_status' });
-  await callCheckApi('new_media_tag', { email, pm_id: pm.data.id, tag: 'test' });
-  await callCheckApi('new_task', { email, pm_id: pm.data.id });
-  const st = await callCheckApi('get', { class: 'dynamic', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
-  const callback_id = { last_status_id: st.data.graphql_id, team_slug: team.data.slug };
-
-  const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'verified' }] }, callback_id);
-  config.appName = 'check';
-});
-
 test('format message from Check API data that contain a picture', async () => {
   const data = {
     dbid: 1,

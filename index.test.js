@@ -240,6 +240,27 @@ test('parse Slack message with Check URL', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 });
 
+test('parse Slack message with Check URL without project', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
+
+  const event = { channel: 'test', text: `There is a Check URL here http://localhost:3333/${team.data.slug}/media/${pm.data.id} can you see?` };
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Slack response status code: 200');
+  expect(outputData).toMatch('GraphQL query response');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
 test('parse Slack message with Check URL that does not exist', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);

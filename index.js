@@ -55,9 +55,6 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       created_at
       updated_at
       tasks_count
-      project {
-        title
-      }
       tags {
         edges {
           node {
@@ -85,7 +82,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   }
   `;
 
-  client.query(projectMediaQuery, { ids: projectMediaId + ',' + projectId })
+  client.query(projectMediaQuery, { ids: projectMediaId })
   .then((resp, errors) => {
     console.log('GraphQL query response: ' + util.inspect(resp));
     const pm = resp.project_media;
@@ -114,7 +111,7 @@ const displayCard = function(checkURLPattern, botId, text) {
 
 const process = function(event, callback, teamConfig) {
   const mainRegexp = new RegExp(escapeRegExp(config.checkWeb.url), 'g');
-  const checkURLPattern = escapeRegExp(config.checkWeb.url) + '\/([^/]+)\/project\/([0-9]+)\/media\/([0-9]+)';
+  const checkURLPattern = escapeRegExp(config.checkWeb.url) + '(?:\/([^/]+)\/project\/([0-9]+)\/media\/([0-9]+)|\/([^/]+)\/media\/([0-9]+))';
   const regexp = new RegExp(checkURLPattern, 'g');
 
   // Image uploaded for Smooch user
@@ -282,9 +279,9 @@ const process = function(event, callback, teamConfig) {
   // This message contains a Check URL to be parsed
   if (displayCard(checkURLPattern, event.bot_id, event.text)) {
     while (matches = regexp.exec(event.text)) {
-      const teamSlug = matches[1],
+      const teamSlug = matches[1] || matches[4],
             projectId = matches[2],
-            projectMediaId = matches[3];
+            projectMediaId = matches[3] || matches[5];
 
       getProjectMedia(teamSlug, projectId, projectMediaId, callback, function(data) {
         const message = {
@@ -513,9 +510,6 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
         created_at
         updated_at
         tasks_count
-        project {
-          title
-        }
         tags {
           edges {
             node {
