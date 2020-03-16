@@ -607,6 +607,30 @@ const markTranslationAsError = function(event, data, token, callback, done) {
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 };
 
+const setSmoochSlackUrl = function(event, data, token, callback, done) {
+
+  const setFields = JSON.stringify({ smooch_slack_url: 'get slack URL' });
+
+  const vars = {
+    id: value.last_status_id,
+    setFields: setFields,
+    clientMutationId: `fromSlackMessage:${data.message_ts}`
+  };
+
+  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
+    updateDynamicAnnotationSmooch: updateDynamicAnnotationSmooch(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
+      project_media {
+        id
+        dbid
+      }
+    }
+  }`;
+
+
+  executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
+};
+
+
 exports.handler = function(event, context, callback) {
   let data = event;
   if (event.headers && event.body) {
