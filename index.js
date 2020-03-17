@@ -613,19 +613,14 @@ const markTranslationAsError = function(event, data, token, callback, done) {
 };
 
 const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done) {
-  console.log('print event***', event);
-  console.log('print data', data);
   const slackChannelUrl = 'https://app.slack.com/client/' + data.teamId + '/' + event.channel
-
   const setFields = JSON.stringify({ smooch_user_slack_channel_url: slackChannelUrl });
-
   const vars = {
     id: data.id,
     setFields: setFields,
     clientMutationId: `fromSlackMessage:${event.ts}`
   };
-  console.log('vars', vars);
-  const mutationQuerySlack = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
+  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
     updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
       project_media {
         id
@@ -634,7 +629,7 @@ const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done
     }
   }`;
 
-  executeMutation(mutationQuerySlack, vars, null, done, token, callback, event, data);
+  executeMutation(mutationQuery, vars, null, done, token, callback, event, data);
 };
 
 
