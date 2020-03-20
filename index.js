@@ -150,11 +150,31 @@ const process = function(event, callback, teamConfig) {
       const redisKey = 'slack_channel_smooch:' + config.redisPrefix + ':' + event.channel;
       redis.get(redisKey, function(err, reply) {
         const data = JSON.parse(reply.toString());
+        const token = config.checkApi.apiKey;
+        let done = null;
+        let mutationQuery = null;
+
+        if (mode === 'human') {
+          const actionData = JSON.stringify({
+            channel: event.channel,
+            token: ACCESS_TOKEN,
+          });
+          mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!, $actionData: String) {
+            updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action, action_data: $actionData }) {
+              project {
+                id
+              }
+            }
+          }`;
+          done = function() { };
+          executeMutation(mutationQuery, { action: 'refresh_timeout', actionData, id: data.annotation_id, clientMutationId: `fromSlackMessage:${event.ts}` }, null, done, token, callback, event, {});
+        }
+
         if (data.mode !== mode) {
           const newData = Object.assign({}, data);
           newData.mode = mode;
           redis.set(redisKey, JSON.stringify(newData), function() {
-            const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
+            mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
               updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
                 project {
                   id
@@ -162,7 +182,7 @@ const process = function(event, callback, teamConfig) {
               }
             }`;
 
-            const done = function() {
+            done = function() {
               if (event.type !== 'channel_archive') {
                 console.log('Bot was deactivated because a message was sent');
                 callback(null);
@@ -173,7 +193,6 @@ const process = function(event, callback, teamConfig) {
               }
             };
 
-            const token = config.checkApi.apiKey;
             executeMutation(mutationQuery, { action, id: data.annotation_id, clientMutationId: `fromSlackMessage:${event.ts}` }, null, done, token, callback, event, {});
 
             if (event.type !== 'channel_archive') {
