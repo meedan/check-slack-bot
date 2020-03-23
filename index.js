@@ -267,8 +267,8 @@ const process = function(event, callback, teamConfig) {
           const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
 
           // Store SmoochUserSlackChannelUrl
-          setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id, dbid: resp.annotation.dbid }, config.checkApi.apiKey, callback, function(resp) {
-            console.log('Added smooch user slack channel url to smooch user annotation' + data.dbid);
+          setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp) {
+            console.log('Added slack channel url to smooch user annotation that related to project ' + resp.updateDynamicAnnotationSmoochUser.project.dbid);
           });
 
           const redis = getRedisClient();
