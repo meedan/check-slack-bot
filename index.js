@@ -266,6 +266,11 @@ const process = function(event, callback, teamConfig) {
           const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
           const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
 
+          // Store SmoochUserSlackChannelUrl
+          setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp) {
+            console.log('Added slack channel url to smooch user annotation that related to project ' + resp.updateDynamicAnnotationSmoochUser.project.dbid);
+          });
+
           const redis = getRedisClient();
           redis.on('connect', function() {
             redis.multi()
@@ -625,6 +630,25 @@ const markTranslationAsError = function(event, data, token, callback, done) {
 
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 };
+
+const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done) {
+  const slackChannelUrl = 'https://app.slack.com/client/' + data.teamId + '/' + event.channel;
+  const setFields = JSON.stringify({ smooch_user_slack_channel_url: slackChannelUrl });
+  const vars = {
+    id: data.id,
+    ids: [data.id],
+    setFields: setFields,
+    clientMutationId: `fromSlackMessage:${event.ts}`
+  };
+  const mutationQuery = `($setFields: String!, $id: ID!, $ids: [ID!], $clientMutationId: String!) {
+    updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, ids: $ids, set_fields: $setFields }) {
+      project { dbid }
+    }
+  }`;
+
+  executeMutation(mutationQuery, vars, null, done, token, callback, event, data);
+};
+
 
 exports.handler = function(event, context, callback) {
   let data = event;
