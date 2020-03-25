@@ -272,14 +272,14 @@ const process = function(event, callback, teamConfig) {
             .set('slack_channel_project:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value))
             .set('slack_channel_smooch:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value2))
             .exec(function() {
+              console.log('Associated with annotation ' + resp.annotation.dbid);
               // Store SmoochUserSlackChannelUrl in Check as well
-              setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp) {
-                console.log('Added Slack channel URL to Smooch user annotation that is related to project ' + resp.updateDynamicAnnotationSmoochUser.project.dbid);
+              setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp2) {
+                console.log('Added Slack channel URL to Smooch user annotation that is related to project ' + resp2.updateDynamicAnnotationSmoochUser.project.dbid);
                 const query = qs.stringify(message);
                 https.get('https://slack.com/api/chat.postMessage?' + query, function() {
                   callback(null);
                 });
-                console.log('Associated with annotation ' + resp.annotation.dbid);
               });
             });
             redis.quit();
