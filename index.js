@@ -266,22 +266,21 @@ const process = function(event, callback, teamConfig) {
           const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
           const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
 
-          // Store SmoochUserSlackChannelUrl
-          setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp) {
-            console.log('Added slack channel url to smooch user annotation that related to project ' + resp.updateDynamicAnnotationSmoochUser.project.dbid);
-          });
-
           const redis = getRedisClient();
           redis.on('connect', function() {
             redis.multi()
             .set('slack_channel_project:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value))
             .set('slack_channel_smooch:' + config.redisPrefix + ':' + event.channel, JSON.stringify(value2))
             .exec(function() {
-              const query = qs.stringify(message);
-              https.get('https://slack.com/api/chat.postMessage?' + query, function() {
-                callback(null);
+              // Store SmoochUserSlackChannelUrl in Check as well
+              setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp) {
+                console.log('Added Slack channel URL to Smooch user annotation that is related to project ' + resp.updateDynamicAnnotationSmoochUser.project.dbid);
+                const query = qs.stringify(message);
+                https.get('https://slack.com/api/chat.postMessage?' + query, function() {
+                  callback(null);
+                });
+                console.log('Associated with annotation ' + resp.annotation.dbid);
               });
-              console.log('Associated with annotation ' + resp.annotation.dbid);
             });
             redis.quit();
           });
