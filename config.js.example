@@ -1,26 +1,28 @@
 const config = {
-  appName: 'check', // Or bridge
+  appName: 'check',
   checkApi: {
-    url: 'http://localhost:3000',
-    apiKey: 'dev',
-    // httpAuth: 'user:password'
+    url: 'http://api:3000',
+    apiKey: 'dev'
   },
   checkWeb: {
     url: 'http://localhost:3333',
   },
   slack: {
-    // Find the teamId in the HTML source of the Slack workspace page
-    <teamId>: {
-      verificationToken: 'Find it at https://api.slack.com/apps/AXXXXX/general',
-      accessToken: 'Find it at https://api.slack.com/apps/AXXXXX/oauth',
-      legacyToken: 'Find it at https://api.slack.com/custom-integrations/legacy-tokens',
-      smoochBotId: 'Slack id of the Smooch bot, so we can identify messages from it',
-    }
+    <SLACK WORKSPACE ID>: {
+      verificationToken: '<SLACK BOT VERIFICATION TOKEN>',
+      accessToken: '<SLACK BOT ACCESS TOKEN>',
+      legacyToken: '<SLACK BOT LEGACY TOKEN>',
+      smoochBotId: '<SLACK BOT APP ID>',
+    },
+    <SLACK WORKSPACE ID>: {
+      verificationToken: '<SLACK BOT VERIFICATION TOKEN>',
+      accessToken: '<SLACK BOT ACCESS TOKEN>',
+      legacyToken: '<SLACK BOT LEGACY TOKEN>',
+      smoochBotId: '<SLACK BOT APP ID>',
+    },
   },
-  redisHost: 'without protocol or port, only the hostname',
-  redisPrefix: 'check',
-  awsRegion: 'us-east-1',
-  googleImageSearchFunctionName: 'if not provided, defaults to "google-image-search"',
-  slashResponseFunctionName: 'if not provided, defaults to "slash-response"'
+  redisHost: 'localhost',
+  redisPrefix: 'local',
+  awsRegion: 'local'
 };
 module.exports = config;
