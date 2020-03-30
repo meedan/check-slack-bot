@@ -274,8 +274,8 @@ const process = function(event, callback, teamConfig) {
             .exec(function() {
               console.log('Associated with annotation ' + resp.annotation.dbid);
               // Store SmoochUserSlackChannelUrl in Check as well
-              setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.id }, config.checkApi.apiKey, callback, function(resp2) {
-                console.log('Added Slack channel URL to Smooch user annotation that is related to project ' + resp2.updateDynamicAnnotationSmoochUser.project.dbid);
+              setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.dbid }, config.checkApi.apiKey, callback, function(resp2) {
+                console.log('Added Slack channel URL to Smooch user annotation ' + resp2.smoochBotAddSlackChannelUrl.annotation.dbid);
                 const query = qs.stringify(message);
                 https.get('https://slack.com/api/chat.postMessage?' + query, function() {
                   callback(null);
@@ -635,13 +635,12 @@ const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done
   const setFields = JSON.stringify({ smooch_user_slack_channel_url: slackChannelUrl });
   const vars = {
     id: data.id,
-    ids: [data.id],
     setFields: setFields,
     clientMutationId: `fromSlackMessage:${event.ts}`
   };
-  const mutationQuery = `($setFields: String!, $id: ID!, $ids: [ID!], $clientMutationId: String!) {
-    updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, ids: $ids, set_fields: $setFields }) {
-      project { dbid }
+  const mutationQuery = `($setFields: String!, $id: String!, $clientMutationId: String!) {
+    smoochBotAddSlackChannelUrl: smoochBotAddSlackChannelUrl(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
+      annotation { dbid }
     }
   }`;
 
