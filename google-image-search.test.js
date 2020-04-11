@@ -28,8 +28,8 @@ test('search for image', async () => {
   };
   gis.handler(data, null, callback);
   await sleep(timeout);
-  
-  expect(outputData).toMatch('moon');
+
+  expect(outputData).toMatch('Image search name: ');
   expect(outputData).toMatch('Image search URL: https://');
   expect(outputData).not.toMatch('Image search error');
   expect(outputData).not.toMatch('No results for image search');
@@ -51,7 +51,7 @@ test('search for image but return no data', async () => {
   };
   gis.handler(data, null, callback);
   await sleep(timeout);
-  
+
   expect(outputData).not.toMatch('moon');
   expect(outputData).not.toMatch('Image search URL: https://');
   expect(outputData).not.toMatch('Image search error');
@@ -82,7 +82,7 @@ test('search for image but return error', async () => {
   await gis.handler(data, null, callback);
   await sleep(timeout);
   request.get = requestGet;
-  
+
   expect(outputData).not.toMatch('moon');
   expect(outputData).not.toMatch('Image search URL: https://');
   expect(outputData).toMatch('Image search error');
