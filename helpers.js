@@ -33,27 +33,13 @@ const formatMessageFromData = function(data) {
 
   let statusColor = '#cccccc';
   let statusLabel = data.last_status;
-  const mapping = { check: 'verification_statuses', bridge: 'translation_statuses' };
-  const statuses = data[mapping[config.appName]];
   let options = [];
-  statuses.statuses.forEach(function(st) {
+  data.verification_statuses.statuses.forEach(function(st) {
     if (st.id === data.last_status) {
       statusColor = st.style.color;
       statusLabel = st.label;
     }
     options.push({ text: t(st.label.toLowerCase().replace(/ /g, '_'), true), value: st.id });
-  });
-
-  // Build a list of languages
-
-  let languages = [];
-  const languagesJson = JSON.parse(data.target_languages);
-  let teamLanguages = ['en'];
-  if (data.team.get_languages) {
-    teamLanguages = JSON.parse(data.team.get_languages);
-  }
-  teamLanguages.forEach(function(code) {
-    languages.push({ text: languagesJson[code], value: code });
   });
 
   // Formats the fields to be displayed on the Slack card

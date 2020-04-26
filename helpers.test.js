@@ -79,18 +79,6 @@ test('format message from Check API data that contain a picture', async () => {
         }
       ]
     },
-    translation_statuses: {
-      statuses: [
-        {
-          id: 'in_progress',
-          style: {
-            color: '#FFCC33'
-          },
-          label: 'In Progress'
-        }
-      ]
-    },
-    target_languages: '{"en":"English"}',
     log_count: 12,
     created_at: new Date(),
     updated_at: new Date(),

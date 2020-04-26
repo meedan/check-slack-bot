@@ -20,7 +20,7 @@ test('verify call if team is in config', () => {
   const data = buildData('123456abcdef', 'url_verification');
   const callback = jest.fn();
   buttons.handler(data, null, callback);
-  expect(callback).toHaveBeenCalledWith(null, 'challenge'); 
+  expect(callback).toHaveBeenCalledWith(null, 'challenge');
 });
 
 test('does not verify call if team is not in config', () => {
@@ -112,25 +112,6 @@ test('identify Slack user and handle add_comment command', async () => {
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your note') }));
 });
 
-test('identify Slack user and mark status as error on Bridge', async () => {
-  const appName = config.appName;
-  config.appName = 'bridge';
-  const callback_id = {};
-  const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'error' }] }, callback_id);
-  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
-  expect(outputData).toMatch('Saved Redis');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Please provide a reason') }));
-  config.appName = appName;
-});
-
-test('identify Slack user and handle add_translation command', async () => {
-  const callback_id = {};
-  const { outputData, callback } = await sendAction({ name: 'add_translation', selected_options: [{ value: 'en' }] }, callback_id);
-  expect(outputData).toMatch('Successfully identified as Slack user with token: ');
-  expect(outputData).toMatch('Saved Redis');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type your translation') }));
-});
-
 test('identify Slack user and handle edit title command', async () => {
   const callback_id = {};
   const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'title' }] }, callback_id);
@@ -164,12 +145,12 @@ test('identify Slack user and handle image_search command on report with image',
     }
   };
   awsMock.mock('Lambda', 'invoke', function() { console.log('AWS Mocked Method'); });
-  
+
   const { outputData, callback } = await sendAction({ name: 'image_search' }, {}, 'https://picsum.photos/200/300/?random');
 
   aws.config = awsConfig;
   config.googleImageSearchFunctionName = functionName;
-  
+
   expect(outputData).toMatch('AWS Mocked Config');
   expect(outputData).toMatch('AWS Mocked Method');
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');

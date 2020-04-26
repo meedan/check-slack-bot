@@ -76,8 +76,6 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
         get_languages
       }
       verification_statuses
-      translation_statuses
-      target_languages
     }
   }
   `;
@@ -360,9 +358,7 @@ const process = function(event, callback, teamConfig) {
       else {
         const data = JSON.parse(reply.toString());
 
-        // Adding comment or changing title or changing description or adding translation or marking a translation as error
-
-        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description' || /^add_translation_/.test(data.mode) || data.mode === 'translation_error')) {
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description')) {
 
           getCheckSlackUser(event.user,
 
@@ -380,38 +376,6 @@ const process = function(event, callback, teamConfig) {
                   const message = { text: t('your_note_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                                     response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   const query = qs.stringify(message);
-                  https.get('https://slack.com/api/chat.postMessage?' + query);
-                });
-              }
-
-              // Adding translation
-
-              else if (/^add_translation_/.test(data.mode)) {
-                addTranslation(event, data, token, callback, function(resp) {
-                  const message = { text: t('your_translation_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                                    response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                  const query = qs.stringify(message);
-                  https.get('https://slack.com/api/chat.postMessage?' + query);
-                });
-              }
-
-              // Marking translation as error
-
-              else if (data.mode === 'translation_error') {
-                markTranslationAsError(event, data, token, callback, function(resp) {
-                  const obj = resp.updateDynamic.project_media;
-                  obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
-
-                  let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
-                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' };
-
-                  request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
-                    console.log('Response from Slack message update: ' + res);
-                  });
-
-                  message = { text: t('translation_marked_as_error'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                              response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                  query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
                 });
               }
@@ -470,27 +434,6 @@ const createComment = function(event, data, token, callback, done) {
   }`;
 
   executeMutation(mutationQuery, { text: text, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
-}
-
-const addTranslation = function(event, data, token, callback, done) {
-  const pmid = data.object_id.toString(),
-        text = event.text;
-
-  const setFields = JSON.stringify({
-    translation_text: text,
-    translation_language: data.mode.replace(/^add_translation_/, ''),
-    translation_note: '', // FIXME: Support translation note
-  });
-
-  const mutationQuery = `($setFields: String!, $pmid: String!, $clientMutationId: String!) {
-    createDynamic: createDynamic(input: { clientMutationId: $clientMutationId, set_fields: $setFields, annotated_id: $pmid, annotated_type: "ProjectMedia", annotation_type: "translation" }) {
-      project_media {
-        dbid
-      }
-    }
-  }`;
-
-  executeMutation(mutationQuery, { setFields: setFields, pmid: pmid, clientMutationId: `fromSlackMessage:${event.thread_ts}` }, sendErrorMessage, done, token, callback, event, data);
 }
 
 const storeSlackMessage = function(event, callback) {
@@ -554,8 +497,6 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
           get_languages
         }
         verification_statuses
-        translation_statuses
-        target_languages
       }
     }
   }`;
@@ -571,64 +512,6 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
 
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
 }
-
-const markTranslationAsError = function(event, data, token, callback, done) {
-  const setFields = JSON.stringify({ translation_status_status: 'error', translation_status_note: event.text });
-
-  const vars = {
-    id: data.last_status_id,
-    setFields: setFields,
-    clientMutationId: `fromSlackMessage:${event.thread_ts}`
-  };
-
-  console.log('ID is ' + vars.id);
-
-  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
-    updateDynamic: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, set_fields: $setFields }) {
-      project_media {
-        id
-        dbid
-        oembed_metadata
-        last_status
-        last_status_obj {
-          id
-        }
-        log_count
-        created_at
-        updated_at
-        tasks_count
-        project {
-          title
-        }
-        tags {
-          edges {
-            node {
-              tag
-            }
-          }
-        }
-        author_role
-        user {
-          name
-          profile_image
-          source {
-            image
-          }
-        }
-        team {
-          name
-          slug
-          get_languages
-        }
-        verification_statuses
-        translation_statuses
-        target_languages
-      }
-    }
-  }`;
-
-  executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, event, data);
-};
 
 const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done) {
   const slackChannelUrl = 'https://app.slack.com/client/' + data.teamId + '/' + event.channel;

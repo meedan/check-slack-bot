@@ -1,4 +1,4 @@
-// This function adds a ProjectMedia to Check or Bridge and sends a message back to Slack
+// This function adds a ProjectMedia to Check and sends a message back to Slack
 
 const config = require('./config.js'),
       request = require('request'),

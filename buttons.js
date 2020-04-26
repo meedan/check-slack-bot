@@ -17,16 +17,11 @@ const error = function(data, callback) {
 
 const changeStatus = function(data, token, callback) {
   const value = JSON.parse(data.callback_id);
-
-  const status = data.actions[0].selected_options[0].value;
-  const mapping = { check: 'verification_status_status', bridge: 'translation_status_status' };
-  let fields = {};
-  fields[mapping[config.appName]] = status;
-  const setFields = JSON.stringify(fields)
-
   const vars = {
     id: value.last_status_id,
-    setFields: setFields,
+    setFields: JSON.stringify({
+      'verification_status_status': data.actions[0].selected_options[0].value
+    }),
     clientMutationId: `fromSlackMessage:${data.message_ts}`
   };
 
@@ -68,8 +63,6 @@ const changeStatus = function(data, token, callback) {
           get_languages
         }
         verification_statuses
-        translation_statuses
-        target_languages
       }
     }
   }`;
@@ -133,54 +126,6 @@ const addComment = function(data, token, callback) {
   };
 
   saveAndReply(data, token, callback, 'comment', newMessage, attachments);
-};
-
-const markTranslationAsError = function(data, token, callback) {
-  const newMessage = t('please_provide_a_reason');
-
-  let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
-  attachments[0].actions[1] = {
-    name: 'add_comment',
-    text: t('add_note', true),
-    type: 'button',
-    style: 'primary'
-  };
-  attachments[0].actions[2] = {
-    name: 'edit',
-    text: t('edit', true),
-    type: 'select',
-    options: [
-      { text: t('title'), value: 'title' },
-      { text: t('description'), value: 'description' }
-    ],
-    style: 'primary'
-  };
-
-  saveAndReply(data, token, callback, 'translation_error', newMessage, attachments);
-};
-
-const addTranslation = function(data, token, callback, language) {
-  const newMessage = t('type_your_translation_below') + ' (' + language.value + ')';
-
-  let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
-  attachments[0].actions[1] = {
-    name: 'add_comment',
-    text: t('add_note', true),
-    type: 'button',
-    style: 'primary'
-  };
-  attachments[0].actions[2] = {
-    name: 'edit',
-    text: t('edit', true),
-    type: 'select',
-    options: [
-      { text: t('title'), value: 'title' },
-      { text: t('description'), value: 'description' }
-    ],
-    style: 'primary'
-  };
-
-  saveAndReply(data, token, callback, 'add_translation_' + language.value, newMessage, attachments);
 };
 
 const editTitle = function(data, token, callback) {
@@ -280,19 +225,10 @@ const process = function(data, callback, context) {
         switch (data.actions[0].name) {
           case 'change_status':
             const status = data.actions[0].selected_options[0].value;
-            if (config.appName === 'bridge' && status === 'error') {
-              markTranslationAsError(data, token, callback);
-            }
-            else {
-              changeStatus(data, token, callback);
-            }
+            changeStatus(data, token, callback);
             break;
           case 'add_comment':
             addComment(data, token, callback);
-            break;
-          case 'add_translation':
-            const language = data.actions[0].selected_options[0];
-            addTranslation(data, token, callback, language);
             break;
           case 'type_comment':
             callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_your_note_inside_the_thread_above') });
