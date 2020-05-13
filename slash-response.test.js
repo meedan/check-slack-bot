@@ -97,7 +97,7 @@ test('return error message if cannot find project and type is setProject', async
 
   sr.handler(data, null, callback);
   await sleep(3);
-  expect(outputData).toMatch('GraphQL query exception: Error: Invalid status code: 404');
+  expect(outputData).toMatch('GraphQL Error: ActiveRecord::RecordNotFound');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("can't find project") }));
 });
 

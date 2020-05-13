@@ -191,7 +191,7 @@ test('parse Slack message with Check URL that does not exist', async () => {
   const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(3);
-  expect(outputData).toBe('GraphQL query exception: Error: Invalid status code: 404');
+  expect(outputData).toBe("GraphQL query exception: Error: GraphQL Error: Couldn't find ProjectMedia with 'id'=0");
   expect(callback).toHaveBeenCalledWith(null);
 });
 
