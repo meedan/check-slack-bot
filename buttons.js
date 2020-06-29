@@ -39,9 +39,6 @@ const changeStatus = function(data, token, callback) {
         created_at
         updated_at
         tasks_count
-        project {
-          title
-        }
         tags {
           edges {
             node {
