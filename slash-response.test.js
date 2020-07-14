@@ -180,8 +180,8 @@ test('return error message if project is archived', async () => {
 
   const url = 'https://ca.ios.ba/'
 
-  const pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, project_id: response.project.data.dbid });
-  await callCheckApi('archive_project', { project_id: pm.data.project_id });
+  const pm = await callCheckApi('link', { url: url, team_id: response.team.data.dbid, add_to_project_id: response.project.data.dbid });
+  await callCheckApi('archive_project', { project_id: response.project.data.dbid });
 
   const data = { type: "createProjectMedia", body: { team_id: 'T02528QUL', responseUrl: 'https://hooks.slack.com/', channel_id: response.project.data.title}, matches: ['', 'https://meedan.com/en', response.project.data.dbid], user_token: response.user.data.token};
   const callback = jest.fn();
