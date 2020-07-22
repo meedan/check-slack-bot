@@ -74,8 +74,8 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
         name
         slug
         get_languages
+        verification_statuses
       }
-      verification_statuses
     }
   }
   `;
@@ -495,8 +495,8 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
           name
           slug
           get_languages
+          verification_statuses
         }
-        verification_statuses
       }
     }
   }`;

@@ -68,17 +68,6 @@ test('format message from Check API data that contain a picture', async () => {
       ]
     },
     last_status: 'in_progress',
-    verification_statuses: {
-      statuses: [
-        {
-          id: 'in_progress',
-          style: {
-            color: '#FFCC33'
-          },
-          label: 'In Progress'
-        }
-      ]
-    },
     log_count: 12,
     created_at: new Date(),
     updated_at: new Date(),
@@ -98,7 +87,18 @@ test('format message from Check API data that contain a picture', async () => {
     team: {
       name: 'Test Team',
       slug: 'test',
-      get_languages: '["en"]'
+      get_languages: '["en"]',
+      verification_statuses: {
+        statuses: [
+          {
+            id: 'in_progress',
+            style: {
+              color: '#FFCC33'
+            },
+            label: 'In Progress'
+          }
+        ]
+      },
     },
     last_status_obj: {
       id: 1

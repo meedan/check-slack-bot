@@ -34,7 +34,7 @@ const formatMessageFromData = function(data) {
   let statusColor = '#cccccc';
   let statusLabel = data.last_status;
   let options = [];
-  data.verification_statuses.statuses.forEach(function(st) {
+  data.team.verification_statuses.statuses.forEach(function(st) {
     if (st.id === data.last_status) {
       statusColor = st.style.color;
       statusLabel = st.label;

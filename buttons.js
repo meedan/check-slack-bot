@@ -58,8 +58,8 @@ const changeStatus = function(data, token, callback) {
           name
           slug
           get_languages
+          verification_statuses
         }
-        verification_statuses
       }
     }
   }`;
