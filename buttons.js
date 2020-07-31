@@ -30,7 +30,7 @@ const changeStatus = function(data, token, callback) {
       project_media {
         id
         dbid
-        oembed_metadata
+        oembed
         last_status
         last_status_obj {
           id
@@ -69,7 +69,6 @@ const changeStatus = function(data, token, callback) {
 
   const done = function(resp) {
     const obj = resp.updateDynamic.project_media;
-    obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
     const json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: formatMessageFromData(obj) };
     callback(null, json);
   };

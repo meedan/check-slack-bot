@@ -102,7 +102,7 @@ const formatMessageFromData = function(data) {
     }
   ];
 
-  if (data.oembed_metadata.picture && /^http/.test(data.oembed_metadata.picture)) {
+  if (data.oembed.picture && /^http/.test(data.oembed.picture)) {
     actions.push({
       name: 'image_search',
       text: t('image_search', true),
@@ -119,12 +119,12 @@ const formatMessageFromData = function(data) {
     }
   }
 
-  let title = data.oembed_metadata.title;
+  let title = data.oembed.title;
   if (title.length > 140) {
     title = title.substring(0, 137) + '...';
   }
 
-  let description = data.oembed_metadata.description;
+  let description = data.oembed.description;
   if (description.length > 500) {
     description = description.substring(0, 497) + '...';
   }
@@ -132,16 +132,16 @@ const formatMessageFromData = function(data) {
   return [
     {
       title: t(statusLabel.toLowerCase().replace(/ /g, '_')).toUpperCase() + ': ' + title,
-      title_link: data.oembed_metadata.permalink,
+      title_link: data.oembed.permalink,
       text: description,
       color: statusColor,
       fields: fields,
       author_name: data.user ? (data.user.name + ' | ' + t(data.author_role, true) + ' ' + t('at').toLowerCase() + ' ' + data.team.name) : data.team.name,
       author_icon: author_icon,
-      image_url: data.oembed_metadata.picture,
+      image_url: data.oembed.picture,
       mrkdwn_in: ['title', 'text', 'fields'],
-      fallback: data.oembed_metadata.permalink,
-      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug, id: data.dbid, graphql_id: data.id, link: data.oembed_metadata.permalink }),
+      fallback: data.oembed.permalink,
+      callback_id: JSON.stringify({ last_status_id: data.last_status_obj.id, team_slug: data.team.slug, id: data.dbid, graphql_id: data.id, link: data.oembed.permalink }),
       response_type: 'in_channel',
       replace_original: false,
       delete_original: false,

@@ -46,7 +46,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
     project_media(ids: $ids) {
       id
       dbid
-      oembed_metadata
+      oembed
       last_status
       last_status_obj {
         id
@@ -83,9 +83,7 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
   client.query(projectMediaQuery, { ids: projectMediaId })
   .then((resp, errors) => {
     console.log('GraphQL query response: ' + util.inspect(resp));
-    const pm = resp.project_media;
-    pm.oembed_metadata = JSON.parse(pm.oembed_metadata);
-    done(pm);
+    done(resp.project_media);
   })
   .catch(function(e) {
     console.log('GraphQL query exception: ' + e.toString());
@@ -158,7 +156,7 @@ const process = function(event, callback, teamConfig) {
             token: ACCESS_TOKEN,
           });
           mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!, $actionData: String) {
-            updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action, action_data: $actionData }) {
+            updateDynamicAnnotationSmoochUser: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, action: $action, action_data: $actionData }) {
               project {
                 id
               }
@@ -173,7 +171,7 @@ const process = function(event, callback, teamConfig) {
           newData.mode = mode;
           redis.set(redisKey, JSON.stringify(newData), function() {
             mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
-              updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+              updateDynamicAnnotationSmoochUser: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
                 project {
                   id
                 }
@@ -387,7 +385,6 @@ const process = function(event, callback, teamConfig) {
 
                 updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
                   const obj = resp.updateProjectMedia.project_media;
-                  obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
 
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
                   const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' };
@@ -396,7 +393,7 @@ const process = function(event, callback, teamConfig) {
                     console.log('Response from Slack message update: ' + res);
                   });
 
-                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.oembed_metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.oembed[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                               response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -462,12 +459,12 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
   const id = data.graphql_id,
         text = event.text;
 
-  const mutationQuery = `($metadata: String!, $id: ID!, $clientMutationId: String!) {
+  const mutationQuery = `($metadata: JSON, $id: ID!, $clientMutationId: String!) {
     updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, metadata: $metadata, id: $id }) {
       project_media {
         id
         dbid
-        oembed_metadata
+        oembed
         last_status
         last_status_obj {
           id
@@ -501,11 +498,11 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
     }
   }`;
 
-  let metadata = {};
+  const metadata = {};
   metadata[attribute] = text;
 
   const vars = {
-    metadata: JSON.stringify(metadata),
+    metadata: metadata,
     id: id,
     clientMutationId: `fromSlackMessage:${event.thread_ts}`
   };

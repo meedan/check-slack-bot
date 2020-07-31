@@ -67,7 +67,7 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
     createProjectMedia: createProjectMedia(input: { clientMutationId: $clientMutationId, url: $url, add_to_project_id: $pid }) {
       project_media {
         dbid
-        oembed_metadata
+        oembed
         url
         quote
       }
@@ -81,8 +81,7 @@ const createProjectMedia = function(team_id, responseUrl, vars, token, data, cal
 
   const done = function(resp) {
     console.log('GraphQL query response: ' + util.inspect(resp));
-    const oembedMetadata = JSON.parse(resp.createProjectMedia.project_media.oembed_metadata);
-    let message = { response_type: "in_channel", text: projectMediaCreatedMessage() + oembedMetadata.permalink };
+    const message = { response_type: "in_channel", text: projectMediaCreatedMessage() + resp.createProjectMedia.project_media.oembed.permalink };
     replyToSlack(team_id, responseUrl, message, callback);
     callback(null, message);
   };
@@ -175,7 +174,7 @@ const sendActionToSmoochBot = function(payload, redisKey, callback, action) {
           message = { text: t('message_sent_to_the_bot'), response_type: 'in_channel' };
 
           const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
-            updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+            updateDynamicAnnotationSmoochUser: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
               project {
                 id
               }
@@ -199,7 +198,7 @@ const sendActionToSmoochBot = function(payload, redisKey, callback, action) {
               message = { text: t('conversation_is_now_in_bot_mode'), response_type: 'in_channel' };
 
               const mutationQuery = `($action: String!, $id: ID!, $clientMutationId: String!) {
-                updateDynamicAnnotationSmoochUser: updateDynamicAnnotationSmoochUser(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
+                updateDynamicAnnotationSmoochUser: updateDynamic(input: { clientMutationId: $clientMutationId, id: $id, action: $action }) {
                   project {
                     id
                   }
