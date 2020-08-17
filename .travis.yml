@@ -1,6 +1,6 @@
 sudo: required
-dist: trusty
-language: node_js
+dist: bionic
+language: ruby
 node_js:
 - '7'
 rvm:
@@ -16,6 +16,10 @@ addons:
     - api.test
     - minio
     - redis
+  snaps:
+    - name: node
+      channel: 12/stable
+      confinement: classic
 cache:
   directories:
     - 'node_modules'
@@ -25,10 +29,10 @@ before_install:
 - chmod +x cc-test-reporter
 - ./cc-test-reporter before-build
 - git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
-- sudo rm /etc/apt/sources.list.d/mongodb*
-- sudo rm /etc/apt/sources.list.d/google*
+- sudo rm -f /etc/apt/sources.list.d/mongodb*
+- sudo rm -f /etc/apt/sources.list.d/google*
 - sudo apt-get -qq update
-- sudo apt-get install wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libnss3-1d libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server -y
+- sudo apt-get install wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server libtag1-dev -y
 - export PATH=/tmp/bundler/ruby/2.4.0/bin:$PATH
 - export GEM_PATH=/tmp/bundler/ruby/2.4.0/gems:$GEM_PATH
 - export TEST_ENV_NUMBER=0
