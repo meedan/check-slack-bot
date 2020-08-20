@@ -1,4 +1,4 @@
-FROM meedan/nodejs
+FROM node:10
 MAINTAINER Meedan <sysops@meedan.com>
 
 # install dependencies
@@ -18,5 +18,4 @@ COPY . /app
 # startup
 COPY ./docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
-ENTRYPOINT ["tini", "--"]
 CMD ["/docker-entrypoint.sh"]
