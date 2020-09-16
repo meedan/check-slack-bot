@@ -386,7 +386,7 @@ const process = function(event, callback, teamConfig) {
                 const attribute = data.mode.replace(/^edit_/, '');
 
                 updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
-                  const obj = resp.updateProjectMedia.project_media;
+                  const obj = resp.updateDynamic.project_media;
                   obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
 
                   let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
@@ -459,11 +459,11 @@ const storeSlackMessage = function(event, callback) {
 }
 
 const updateTitleOrDescription = function(attribute, event, data, token, callback, done) {
-  const id = data.graphql_id,
+  const id = data.last_status_id,
         text = event.text;
 
-  const mutationQuery = `($metadata: String!, $id: ID!, $clientMutationId: String!) {
-    updateProjectMedia: updateProjectMedia(input: { clientMutationId: $clientMutationId, metadata: $metadata, id: $id }) {
+  const mutationQuery = `($setFields: String!, $id: ID!, $clientMutationId: String!) {
+    updateDynamic: updateDynamic(input: { clientMutationId: $clientMutationId, set_fields: $setFields, id: $id }) {
       project_media {
         id
         dbid
@@ -501,11 +501,14 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
     }
   }`;
 
-  let metadata = {};
-  metadata[attribute] = text;
+  const fields = {};
+  if (attribute === 'description') {
+    attribute = 'content';
+  }
+  fields[attribute] = text;
 
   const vars = {
-    metadata: JSON.stringify(metadata),
+    setFields: JSON.stringify(fields),
     id: id,
     clientMutationId: `fromSlackMessage:${event.thread_ts}`
   };

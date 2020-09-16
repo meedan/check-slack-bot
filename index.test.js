@@ -64,11 +64,12 @@ const testEditMedia = async (field) => {
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
   let pm = await callCheckApi('claim', { quote: 'Media Title', team_id: team.data.dbid, project_id: project.data.dbid });
-  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,graphql_id' });
+  pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,graphql_id,last_status_obj' });
 
   const thread_ts = new Date().getTime();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
-  const value = JSON.stringify({ mode: 'edit_' + field, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id });
+  const st = await callCheckApi('get', { class: 'dynamic', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
+  const value = JSON.stringify({ mode: 'edit_' + field, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, last_status_id: st.data.graphql_id });
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 

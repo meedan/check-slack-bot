@@ -190,7 +190,7 @@ test('return error message if project is archived', async () => {
   await sleep(8);
 
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: expect.stringContaining('Validation failed')})])}));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: expect.stringContaining("Sorry, you can't add an item to a trashed list")})])}));
 });
 
 test('return error message when try to show project but not defined on channel', async () => {
