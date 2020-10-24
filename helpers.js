@@ -44,23 +44,24 @@ const formatMessageFromData = function(data) {
 
   // Formats the fields to be displayed on the Slack card
 
-  let fields = [
-    {
-      title: t('notes'),
-      value: data.log_count,
+  let fields = []
+  if (data.media && data.media.url) {
+    fields.push({
+      title: t('media_URL'),
+      value: data.media.url,
       short: true
-    },
-    {
-      title: t('added_to_' + config.appName, true),
-      value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
-      short: true
-    },
-    {
-      title: t('last_update', true),
-      value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
-      short: true
-    }
-  ];
+    });
+  }
+  fields.push({
+    title: t('added_to_' + config.appName, true),
+    value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
+    short: true
+  });
+  fields.push({
+    title: t('last_update', true),
+    value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
+    short: true
+  });
 
   if (parseInt(data.tasks_count.all) > 0) {
     fields.push(
@@ -96,8 +97,8 @@ const formatMessageFromData = function(data) {
       type: 'select',
       style: 'primary',
       options: [
-        { text: t('title'), value: 'title' },
-        { text: t('description'), value: 'description' }
+        { text: t('analysis_title'), value: 'title' },
+        { text: t('analysis_content'), value: 'description' }
       ]
     }
   ];

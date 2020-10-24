@@ -76,6 +76,9 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
         get_languages
         verification_statuses
       }
+      media {
+        url
+      }
     }
   }
   `;
@@ -96,14 +99,21 @@ const escapeRegExp = function(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
-const displayCard = function(checkURLPattern, botId, text) {
-  if (!text) { return false }
+const displayCard = function(checkURLPattern, event) {
+  if (!event.text) {
+    // Check notifications
+    if (event.attachments && event.attachments.length === 1 && JSON.stringify(Object.keys(event.attachments[0]).sort()) === JSON.stringify(['fallback', 'id', 'pretext']) && /^<[^|]+\|[^>]+>$/.test(event.attachments[0].pretext)) {
+      console.log('Display card for Check notification');
+      return true;
+    }
+    return false;
+  }
   const urlFromBotRegexp = new RegExp('\<' + checkURLPattern + '\>');
-  switch(botId) {
+  switch(event.bot_id) {
     case undefined:
       return true;
     default:
-      return urlFromBotRegexp.test(text)
+      return urlFromBotRegexp.test(event.text);
   }
 };
 
@@ -298,8 +308,9 @@ const process = function(event, callback, teamConfig) {
   }
 
   // This message contains a Check URL to be parsed
-  if (displayCard(checkURLPattern, event.bot_id, event.text)) {
-    while (matches = regexp.exec(event.text)) {
+  if (displayCard(checkURLPattern, event)) {
+    const text = event.text || event.attachments[0].pretext;
+    while (matches = regexp.exec(text)) {
       const teamSlug = matches[1] || matches[4],
             projectId = matches[2],
             projectMediaId = matches[3] || matches[5];
@@ -496,6 +507,9 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
           slug
           get_languages
           verification_statuses
+        }
+        media {
+          url
         }
       }
     }

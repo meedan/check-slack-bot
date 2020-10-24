@@ -30,8 +30,8 @@ functions.forEach(function(name) {
       // Ignore
     }
     else {
-      console.log(util.inspect(headers));
-      console.log(util.inspect(data));
+      console.log(util.inspect(headers, true, 7, true));
+      console.log(util.inspect(data, true, 7, true));
       lambda({ body: data, headers }, { source: 'local' }, generateCallback(response));
       console.log('--------------------------------------------------------------------------------------');
     }

@@ -60,6 +60,9 @@ const changeStatus = function(data, token, callback) {
           get_languages
           verification_statuses
         }
+        media {
+          url
+        }
       }
     }
   }`;

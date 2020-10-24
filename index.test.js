@@ -259,6 +259,29 @@ test('parse Slack message with Check URL posted by slash bot', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 });
 
+test('parse Slack message with Check URL posted as a Check notification', async () => {
+  let outputData = '';
+  storeLog = inputs => (outputData += inputs);
+  console['log'] = jest.fn(storeLog);
+
+  const email = buildRandomString() + '@test.com';
+  const user = await callCheckApi('user', { email });
+  const team = await callCheckApi('team', { email });
+  const project = await callCheckApi('project', { team_id: team.data.dbid });
+  const url = 'https://ca.ios.ba/'
+  let pm = await callCheckApi('link', { url: url, team_id: team.data.dbid, project_id: project.data.dbid });
+
+  const event = { channel: 'test', bot_id: config.bot_id, text: '', attachments: [{ fallback: 'Fallback', id: 1, pretext: `<http://localhost:3333/${team.data.slug}/project/${project.data.dbid}/media/${pm.data.id}|A new URL was added>`}] }
+  const data = buildData('123456abcdef', 'event_callback', event);
+  const callback = jest.fn();
+  index.handler(data, null, callback);
+  await sleep(3);
+  expect(outputData).toMatch('Slack response status code: 200');
+  expect(outputData).toMatch('GraphQL query response');
+  expect(outputData).toMatch('Display card for Check notification');
+  expect(callback).toHaveBeenCalledWith(null);
+});
+
 test('ignore Slack message with Check URL and `|` posted by bot', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
