@@ -13,6 +13,8 @@ const t = function(str, capitalizeAll) {
     return str.replace(/_/g, ' ').replace(/\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
   }
   str = str.replace(/_/g, ' ');
+  str = str.replace('description', 'content');
+  str = str.replace('Description', 'Content');
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 

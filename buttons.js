@@ -110,8 +110,8 @@ const addComment = function(data, token, callback) {
     text: t('edit', true),
     type: 'select',
     options: [
-      { text: t('title'), value: 'title' },
-      { text: t('description'), value: 'description' }
+      { text: t('analysis_title'), value: 'title' },
+      { text: t('analysis_content'), value: 'description' }
     ],
     style: 'primary'
   };
@@ -134,11 +134,11 @@ const editTitle = function(data, token, callback) {
     text: t('edit', true),
     type: 'select',
     options: [
-      { text: t('type_title_below'), value: 'type_title' },
-      { text: t('description'), value: 'description' }
+      { text: t('type_analysis_title_below'), value: 'type_title' },
+      { text: t('analysis_content'), value: 'description' }
     ],
     selected_options: [
-      { text: t('type_title_below'), value: 'type_title' },
+      { text: t('type_analysis_title_below'), value: 'type_title' },
     ],
     style: 'primary'
   };
@@ -161,11 +161,11 @@ const editDescription = function(data, token, callback) {
     text: t('edit', true),
     type: 'select',
     options: [
-      { text: t('title'), value: 'title' },
-      { text: t('type_description_below'), value: 'type_description' }
+      { text: t('analysis_title'), value: 'title' },
+      { text: t('type_analysis_content_below'), value: 'type_description' }
     ],
     selected_options: [
-      { text: t('type_description_below'), value: 'type_description' },
+      { text: t('type_analysis_content_below'), value: 'type_description' },
     ],
     style: 'primary'
   };
