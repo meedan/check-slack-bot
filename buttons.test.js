@@ -69,13 +69,13 @@ test('identify Slack user and handle type_comment command', async () => {
 test('identify Slack user and handle type_title command', async () => {
   const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'type_title' }] });
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new title') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new analysis title') }));
 });
 
 test('identify Slack user and handle type_description command', async () => {
   const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'type_description' }] });
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new description') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('type the new analysis content') }));
 });
 
 test('identify Slack user and handle change_status command', async () => {
@@ -117,7 +117,7 @@ test('identify Slack user and handle edit title command', async () => {
   const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'title' }] }, callback_id);
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Saved Redis');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type the title below') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type the analysis title below') }));
 });
 
 test('identify Slack user and handle edit description command', async () => {
@@ -125,7 +125,7 @@ test('identify Slack user and handle edit description command', async () => {
   const { outputData, callback } = await sendAction({ name: 'edit', selected_options: [{ value: 'description' }] }, callback_id);
   expect(outputData).toMatch('Successfully identified as Slack user with token: ');
   expect(outputData).toMatch('Saved Redis');
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type the description below') }));
+  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining('Type the analysis content below') }));
 });
 
 test('identify Slack user and handle image_search command on report without image', async () => {

@@ -21,13 +21,6 @@ const t = function(str, capitalizeAll) {
 
 const formatMessageFromData = function(data) {
 
-  // Build a list of tags
-
-  let tags = [];
-  data.tags.edges.forEach(function(tag) {
-    tags.push(tag.node.tag);
-  });
-
   // Build a list of verification statuses (core or custom) to be selected
   // Get the current status (label and color)
 
@@ -44,37 +37,24 @@ const formatMessageFromData = function(data) {
 
   // Formats the fields to be displayed on the Slack card
 
-  let fields = []
+  let fields = [
+    {
+      title: t('added_to_' + config.appName, true),
+      value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
+      short: true
+    },
+    {
+      title: t('last_update', true),
+      value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
+      short: true
+    }
+  ];
   if (data.media && data.media.url) {
     fields.push({
       title: t('media_URL'),
       value: data.media.url,
-      short: true
+      short: false
     });
-  }
-  fields.push({
-    title: t('added_to_' + config.appName, true),
-    value: '<!date^' + data.created_at + '^{date} {time}|' + data.created_at + '>',
-    short: true
-  });
-  fields.push({
-    title: t('last_update', true),
-    value: '<!date^' + data.updated_at + '^{date} {time}|' + data.updated_at + '>',
-    short: true
-  });
-
-  if (parseInt(data.tasks_count.all) > 0) {
-    fields.push(
-      {
-        title: t('tasks_completed', true),
-        value: data.tasks_count.completed + '/' + data.tasks_count.all,
-        short: true
-      }
-    );
-  }
-
-  if (tags.length > 0) {
-    fields.push({ title: t('tags'), value: tags.join(', '), short: true });
   }
 
   let actions = [

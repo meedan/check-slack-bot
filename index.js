@@ -51,17 +51,8 @@ const getProjectMedia = function(teamSlug, projectId, projectMediaId, callback, 
       last_status_obj {
         id
       }
-      log_count
       created_at
       updated_at
-      tasks_count
-      tags {
-        edges {
-          node {
-            tag
-          }
-        }
-      }
       author_role
       user {
         name
@@ -407,7 +398,7 @@ const process = function(event, callback, teamConfig) {
                     console.log('Response from Slack message update: ' + res);
                   });
 
-                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.oembed_metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                  message = { text: t(attribute + '_was_changed_to').replace('description', 'content') + ': ' + obj.oembed_metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
                               response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
                   query = qs.stringify(message);
                   https.get('https://slack.com/api/chat.postMessage?' + query);
@@ -483,17 +474,8 @@ const updateTitleOrDescription = function(attribute, event, data, token, callbac
         last_status_obj {
           id
         }
-        log_count
         created_at
         updated_at
-        tasks_count
-        tags {
-          edges {
-            node {
-              tag
-            }
-          }
-        }
         author_role
         user {
           name

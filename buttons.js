@@ -35,17 +35,8 @@ const changeStatus = function(data, token, callback) {
         last_status_obj {
           id
         }
-        log_count
         created_at
         updated_at
-        tasks_count
-        tags {
-          edges {
-            node {
-              tag
-            }
-          }
-        }
         author_role
         user {
           name
@@ -129,7 +120,7 @@ const addComment = function(data, token, callback) {
 };
 
 const editTitle = function(data, token, callback) {
-  const newMessage = t('type_the_title_below');
+  const newMessage = t('type_the_analysis_title_below');
 
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
@@ -156,7 +147,7 @@ const editTitle = function(data, token, callback) {
 };
 
 const editDescription = function(data, token, callback) {
-  const newMessage = t('type_the_description_below');
+  const newMessage = t('type_the_analysis_content_below');
 
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
@@ -243,10 +234,10 @@ const process = function(data, callback, context) {
                 editDescription(data, token, callback);
                 break;
               case 'type_title':
-                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_title_inside_the_thread_above') });
+                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_analysis_title_inside_the_thread_above') });
                 break;
               case 'type_description':
-                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_description_inside_the_thread_above') });
+                callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('please_type_the_new_analysis_content_inside_the_thread_above') });
                 break;
             }
             break;

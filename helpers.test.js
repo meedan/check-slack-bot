@@ -58,25 +58,11 @@ test('format message from Check API data that contain a picture', async () => {
   const data = {
     dbid: 1,
     id: 'asdhjadshj',
-    tags: {
-      edges: [
-        {
-          node: {
-            tag: 'test'
-          }
-        }
-      ]
-    },
     last_status: 'in_progress',
-    log_count: 12,
     created_at: new Date(),
     updated_at: new Date(),
     project: {
       title: 'Test'
-    },
-    tasks_count: {
-      all: 3,
-      completed: 2
     },
     oembed_metadata: {
       picture: 'https://picsum.photos/200/300',
