@@ -75,7 +75,7 @@ const formatMessageFromData = function(data) {
     },
     {
       name: 'edit',
-      text: t('edit', true),
+      text: t('edit_analysis', true),
       type: 'select',
       style: 'primary',
       options: [
@@ -209,6 +209,30 @@ const getTeamConfig = function(slackTeamId) {
   return config.slack[slackTeamId] || {};
 };
 
+const saveAndReply = function(data, token, callback, mode, newMessage, attachments) {
+  const value = JSON.parse(data.callback_id);
+  const redisKey = 'slack_message_ts:' + config.redisPrefix + ':' + data.message_ts;
+	const storedData = { mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id, last_status_id: value.last_status_id, currentUser: data.user.id, slackMessageData: data };
+  let message = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
+
+  const success = function() {
+    json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: token };
+
+    const options = {
+      uri: data.response_url,
+      method: 'POST',
+      json: json
+    };
+
+    request(options, function(err, response, body) {
+      console.log('Output from delayed response: ' + body);
+    });
+
+    console.log('Saved Redis key slack_message_ts:' + data.message_ts);
+  };
+  saveToRedisAndReplyToSlack(redisKey, storedData, message, success, callback);
+};
+
 const saveToRedisAndReplyToSlack = function(redisKey, value, message, done, callback) {
   const redis = getRedisClient();
   redis.on('connect', function() {
@@ -238,6 +262,7 @@ module.exports = {
   verify,
   executeMutation,
   getTeamConfig,
+  saveAndReply,
   saveToRedisAndReplyToSlack,
   projectMediaCreatedMessage,
   humanAppName

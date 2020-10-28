@@ -5,7 +5,7 @@ const config = require('./config.js'),
 let VERIFICATION_TOKEN = null,
     ACCESS_TOKEN = null;
 
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, saveToRedisAndReplyToSlack, saveAndReply } = require('./helpers.js');
 
 const sendErrorMessage = function(callback, thread, channel, link) {
   callback(null, { response_type: 'ephemeral', replace_original: false, delete_original: false, text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ': ' + link });
@@ -71,43 +71,19 @@ const changeStatus = function(data, token, callback) {
   executeMutation(mutationQuery, vars, sendErrorMessage, done, token, callback, {}, data);
 };
 
-const saveAndReply = function(data, token, callback, mode, newMessage, attachments) {
-  const value = JSON.parse(data.callback_id);
-  const redisKey = 'slack_message_ts:' + config.redisPrefix + ':' + data.message_ts;
-	const storedData = { mode: mode, object_type: 'project_media', object_id: value.id, link: value.link, team_slug: value.team_slug, graphql_id: value.graphql_id, last_status_id: value.last_status_id };
-  let message = { text: newMessage + ':', thread_ts: data.message_ts, replace_original: false, delete_original: false, response_type: 'in_channel' };
-
-  const success = function() {
-    json = { response_type: 'in_channel', replace_original: true, delete_original: false, attachments: attachments, token: ACCESS_TOKEN };
-
-    const options = {
-      uri: data.response_url,
-      method: 'POST',
-      json: json
-    };
-
-    request(options, function(err, response, body) {
-      console.log('Output from delayed response: ' + body);
-    });
-
-    console.log('Saved Redis key slack_message_ts:' + data.message_ts);
-  };
-  saveToRedisAndReplyToSlack(redisKey, storedData, message, success, callback);
-};
-
 const addComment = function(data, token, callback) {
   const newMessage = t('type_your_note_below');
 
   let attachments = JSON.parse(JSON.stringify(data.original_message.attachments).replace(/\+/g, ' '));
   attachments[0].actions[1] = {
     name: 'type_comment',
-    text: t('type_your_note_in_the_thread_below'),
+    text: t('type_in_thread'),
     type: 'button',
     style: 'default'
   };
   attachments[0].actions[2] = {
     name: 'edit',
-    text: t('edit', true),
+    text: t('edit_analysis', true),
     type: 'select',
     options: [
       { text: t('analysis_title'), value: 'title' },
@@ -131,14 +107,14 @@ const editTitle = function(data, token, callback) {
   };
   attachments[0].actions[2] = {
     name: 'edit',
-    text: t('edit', true),
+    text: t('edit_analysis', true),
     type: 'select',
     options: [
-      { text: t('type_analysis_title_below'), value: 'type_title' },
+      { text: t('type_in_thread'), value: 'type_title' },
       { text: t('analysis_content'), value: 'description' }
     ],
     selected_options: [
-      { text: t('type_analysis_title_below'), value: 'type_title' },
+      { text: t('type_in_thread'), value: 'type_title' },
     ],
     style: 'primary'
   };
@@ -158,14 +134,14 @@ const editDescription = function(data, token, callback) {
   };
   attachments[0].actions[2] = {
     name: 'edit',
-    text: t('edit', true),
+    text: t('edit_analysis', true),
     type: 'select',
     options: [
       { text: t('analysis_title'), value: 'title' },
-      { text: t('type_analysis_content_below'), value: 'type_description' }
+      { text: t('type_in_thread'), value: 'type_description' }
     ],
     selected_options: [
-      { text: t('type_analysis_content_below'), value: 'type_description' },
+      { text: t('type_in_thread'), value: 'type_description' },
     ],
     style: 'primary'
   };
@@ -259,8 +235,23 @@ const process = function(data, callback, context) {
 };
 
 exports.handler = function(data, context, callback) {
-  const body = Buffer.from(data.body, 'base64').toString();
-  const payload = JSON.parse(decodeURIComponent(body).replace(/^payload=/, ''));
+  let body = null;
+  let payload = null;
+
+  /*
+   * Uncomment for local environment
+   *
+  if (typeof data.body === 'object') {
+    payload = JSON.parse(data.body.payload);
+  }
+  else {
+    body = Buffer.from(data.body, 'base64').toString();
+    payload = JSON.parse(decodeURIComponent(body).replace(/^payload=/, ''));
+  }
+  */
+
+  body = Buffer.from(data.body, 'base64').toString();
+  payload = JSON.parse(decodeURIComponent(body).replace(/^payload=/, ''));
 
   switch (data.type) {
     case 'url_verification':

@@ -69,7 +69,7 @@ const testEditMedia = async (field) => {
   const thread_ts = new Date().getTime();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
   const st = await callCheckApi('get', { class: 'dynamic', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
-  const value = JSON.stringify({ mode: 'edit_' + field, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, last_status_id: st.data.graphql_id });
+  const value = JSON.stringify({ mode: 'edit_' + field, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, last_status_id: st.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
@@ -87,7 +87,7 @@ const testEditMedia = async (field) => {
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'id,' + field });
   expect(pm.data[field]).toBe('Changed ' + field);
   expect(callback).toHaveBeenCalledWith(null);
-  expect(outputData).toMatch('Response from Slack message update');
+  expect(outputData).toMatch('Analysis updated successfully');
 
   await callCheckApi('new_api_key', { access_token: config.checkApi.apiKey });
 };
@@ -120,7 +120,7 @@ test('identify Slack user and create comment', async () => {
 
   const thread_ts = new Date().getTime();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
-  const value = JSON.stringify({ mode: 'comment', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id });
+  const value = JSON.stringify({ mode: 'comment', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 
@@ -322,6 +322,7 @@ const buttonAction = async (mode) => {
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
+  const uid = '654321';
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
@@ -331,7 +332,7 @@ const buttonAction = async (mode) => {
 
   const thread_ts = buildRandomString();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
-  const value = JSON.stringify({ mode, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id });
+  const value = JSON.stringify({ mode, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
   await exec(`redis-cli set ${key} '${value}'`);
   await sleep(3);
 

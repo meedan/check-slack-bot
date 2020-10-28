@@ -7,7 +7,7 @@ const config = require('./config.js'),
       util = require('util');
 let ACCESS_TOKEN = null;
 
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack, saveAndReply } = require('./helpers.js');
 
 const getField = function(query, callback, done) {
   const client = getGraphqlClient(null, config.checkApi.apiKey, callback);
@@ -360,7 +360,7 @@ const process = function(event, callback, teamConfig) {
       else {
         const data = JSON.parse(reply.toString());
 
-        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description')) {
+        if (data.object_type === 'project_media' && (data.mode === 'comment' || data.mode === 'edit_title' || data.mode === 'edit_description') && data.currentUser === event.user) {
 
           getCheckSlackUser(event.user,
 
@@ -371,39 +371,31 @@ const process = function(event, callback, teamConfig) {
 
             function(token) {
 
-              // Adding comment
+              // Reset mode optimistically
+              
+              resetMode(data, token, function() {
 
-              if (data.mode === 'comment') {
-                createComment(event, data, token, callback, function(resp) {
-                  const message = { text: t('your_note_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                                    response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                  const query = qs.stringify(message);
-                  https.get('https://slack.com/api/chat.postMessage?' + query);
-                });
-              }
+                // Adding comment
 
-              // Changing title or description
-
-              else {
-                const attribute = data.mode.replace(/^edit_/, '');
-
-                updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
-                  const obj = resp.updateDynamic.project_media;
-                  obj.oembed_metadata = JSON.parse(obj.oembed_metadata);
-
-                  let message = { ts: event.thread_ts, channel: event.channel, attachments: formatMessageFromData(obj) };
-                  const headers = { 'Authorization': 'Bearer ' + ACCESS_TOKEN, 'Content-type': 'application/json' };
-
-                  request.post({ url: 'https://slack.com/api/chat.update', json: true, body: message, headers: headers }, function(err, res, resjson) {
-                    console.log('Response from Slack message update: ' + res);
+                if (data.mode === 'comment') {
+                  createComment(event, data, token, callback, function(resp) {
+                    const message = { text: t('your_note_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
+                                      response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                    const query = qs.stringify(message);
+                    https.get('https://slack.com/api/chat.postMessage?' + query);
                   });
+                }
 
-                  message = { text: t(attribute + '_was_changed_to') + ': ' + obj.oembed_metadata[attribute], thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                              response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
-                  query = qs.stringify(message);
-                  https.get('https://slack.com/api/chat.postMessage?' + query);
-                });
-              }
+                // Changing title or description
+
+                else {
+                  const attribute = data.mode.replace(/^edit_/, '');
+
+                  updateTitleOrDescription(attribute, event, data, token, callback, function(resp) {
+                    console.log('Analysis updated successfully!');
+                  });
+                }
+              });
             }
           );
         }
@@ -529,6 +521,26 @@ const setSmoochUserSlackChannelUrl = function(event, data, token, callback, done
   executeMutation(mutationQuery, vars, null, done, token, callback, event, data);
 };
 
+const resetMode = function(data, token, callback) {
+  let attachments = JSON.parse(JSON.stringify(data.slackMessageData.original_message.attachments).replace(/\+/g, ' '));
+  attachments[0].actions[1] = {
+    name: 'add_comment',
+    text: t('add_note', true),
+    type: 'button',
+    style: 'primary'
+  };
+  attachments[0].actions[2] = {
+    name: 'edit',
+    text: t('edit_analysis', true),
+    type: 'select',
+    options: [
+      { text: t('analysis_title'), value: 'title' },
+      { text: t('analysis_content'), value: 'description' }
+    ],
+    style: 'primary'
+  };
+  saveAndReply(data.slackMessageData, token, callback, 'normal', '', attachments);
+};
 
 exports.handler = function(event, context, callback) {
   let data = event;
