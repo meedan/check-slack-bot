@@ -36,6 +36,10 @@ before_install:
 - export PATH=/tmp/bundler/ruby/2.4.0/bin:$PATH
 - export GEM_PATH=/tmp/bundler/ruby/2.4.0/gems:$GEM_PATH
 - export TEST_ENV_NUMBER=0
+# Needed to fix error when installing Pender gems
+# Error: `There was an error while loading `rswag.gemspec`: Illformed requirement`
+# https://github.com/jetpackworkflow/rswag/blob/master/rswag/rswag.gemspec#L18
+- export TRAVIS_TAG=0.0.0
 - psql -c 'create database checkdesk_test0;' -U postgres
 - redis-server 2>&1 >/dev/null &
 - docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.9.2
