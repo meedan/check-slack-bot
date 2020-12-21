@@ -32,7 +32,7 @@ before_install:
 - sudo rm -f /etc/apt/sources.list.d/mongodb*
 - sudo rm -f /etc/apt/sources.list.d/google*
 - sudo apt-get -qq update
-- sudo apt-get install wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server libtag1-dev -y
+- sudo apt-get install libidn11-dev wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server libtag1-dev -y
 - export PATH=/tmp/bundler/ruby/2.4.0/bin:$PATH
 - export GEM_PATH=/tmp/bundler/ruby/2.4.0/gems:$GEM_PATH
 - export TEST_ENV_NUMBER=0
