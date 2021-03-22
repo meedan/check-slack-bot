@@ -1,7 +1,7 @@
 const config = {
   appName: 'check',
   checkApi: {
-    url: 'http://localhost:3000',
+    url: 'http://api:3000',
     apiKey: 'test',
     httpAuth: false
   },
