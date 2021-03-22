@@ -1,0 +1,31 @@
+version: "2.1"
+networks:
+  default:
+    name: dev
+services:
+  api:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3000
+  api-background:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3000
+  pender:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3200
+  pender-background:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3200
+  bot:
+    build: .
+    depends_on:
+      - api
+    volumes:
+      - ".:/app"
+      - "/app/node_modules"
+      - "/app/dist"
+    environment:
+      MODE: test

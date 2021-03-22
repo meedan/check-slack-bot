@@ -1,40 +1,14 @@
-sudo: required
+language: minimal
 dist: bionic
-language: ruby
-node_js:
-- '7'
-rvm:
-- 2.4
-services:
-- postgresql
+before_install:
 env:
   global:
     secure: sNHxH6hgZez0cWD/eT7bQbLUEKp5LVraa4Xl+CWjpcLONHLFGL/N4tYw0kHgfsP/mGWiVzywkDcuhiVx4vnr6zH3y2aw0U7KKHe2IALDRckzOb2eQH6us2RNpdKInloBy+2QPuGhQ3CMawmAwX+2y56JGU93jgiwbToXN7KOMGcqjQ2DbdVeKe8l/eX3ZXTCXVCIwbx+D2bQKPSiwr1dHi/5yRdKEn8J9kAmZFSPAG0MhcJoLFh9zeegIYzhJ5B/E29R5VchuY4gye88s3AYefR0A+z3wdBSo7BoCIizk1vj1XuIEzoYjMBxDBbIdx9lkoz+jAvSFaqhOg9qzXMmCRbIGKUIWPlvzWyt+/OVEeXp4iu3kDYaQM54yLhu5WqNIvBX1dLkv3V+PkBQ1ydeHbWN0qcYpGSjfCwoEgKJ+IsjinJAxpCmoL+p2xlgK+u70wOLqMSd+00MY728kD47rQ7h7zyTwJDIfFT7AL5uJacOE4K8h1hT2xZs65yUitVAnqPNfpr8HSsZKvc6EVz7KfAcQo45SKUF9qEx5RKbPUCjcxYdQfEOlJTxJh+nZg481L2n60c/O6LkE7Ne8zRKFrFhN7XnCZ5OUI+zUX4zldPo4gTMluJUigGpxwxwEivgslkpmOm8Els3a9E7qFQar3CzZXKfAa8F4SMDVrUi1h0=
-addons:
-  postgresql: '9.4'
-  hosts:
-    - api.test
-    - minio
-    - redis
-  snaps:
-    - name: node
-      channel: 12/stable
-      confinement: classic
-cache:
-  directories:
-    - 'node_modules'
-    - '/tmp/bundler'
 before_install:
 - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
 - chmod +x cc-test-reporter
+- git clone --branch test/328-fix-tests https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
 - ./cc-test-reporter before-build
-- git clone https://${TOKEN}:x-oauth-basic@github.com/meedan/configurator ./configurator
-- sudo rm -f /etc/apt/sources.list.d/mongodb*
-- sudo rm -f /etc/apt/sources.list.d/google*
-- sudo apt-get -qq update
-- sudo apt-get install libidn11-dev wget python-setuptools lsof unzip imagemagick ruby ruby-dev libnss3 libnss3-dev xvfb libexif-dev curl build-essential libssl-dev libappindicator1 fonts-liberation redis-server libtag1-dev -y
-- export PATH=/tmp/bundler/ruby/2.4.0/bin:$PATH
-- export GEM_PATH=/tmp/bundler/ruby/2.4.0/gems:$GEM_PATH
 - export TEST_ENV_NUMBER=0
 # Needed to fix error when installing Pender gems
 # Error: `There was an error while loading `rswag.gemspec`: Illformed requirement`
@@ -46,36 +20,23 @@ before_install:
 - echo "Using branch $PENDER_BRANCH for Pender"
 - git clone --branch=$PENDER_BRANCH https://github.com/meedan/pender.git
 - d=configurator/check/travis/pender/; for f in $(find $d -type f); do cp "$f" "pender/${f/$d/}"; done
-- cd pender
-- docker-compose build
-- docker-compose -f docker-compose.yml -f docker-test.yml up -d
-- cd -
 # check api
-- psql -c 'create database checkdesk_test0;' -U postgres
-- docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.9.2
-- docker exec elasticsearch elasticsearch-plugin install analysis-icu
-- docker restart elasticsearch
-- until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
-- curl --silent -XPUT http://localhost:9200/check_api_tests0
 - export CHECK_API_BRANCH=$((git ls-remote --exit-code --heads https://github.com/meedan/check-api.git $TRAVIS_BRANCH >/dev/null && echo $TRAVIS_BRANCH) || echo 'develop')
 - echo "Using branch $CHECK_API_BRANCH for Check API"
 - git clone --branch=$CHECK_API_BRANCH https://github.com/meedan/check-api.git
 - d=configurator/check/travis/check-api/; for f in $(find $d -type f); do cp "$f" "check-api/${f/$d/}"; done
-- cd check-api
-- bundle install --path=/tmp/bundler
-- bundle exec rake db:migrate RAILS_ENV=test
-- bundle exec rake lapis:api_keys:create_default RAILS_ENV=test
-- bundle exec thin -p 3000 -e test -t 60 --threadpool-size=60 --threaded start >/dev/null &
-- sleep 10
-- cd -
 before_script:
+- docker-compose build
+- docker-compose -f docker-compose.yml -f docker-test.yml up -d
 - cp config.js.example config.js
 - cp aws.json.example aws.json
 - mkdir dist
-- npm run build
-script: npm test
+- docker-compose exec bot npm run build
+script: docker-compose exec bot npm test
 after_script:
-- ./cc-test-reporter after-build --exit-code 0 -t lcov
+- docker-compose exec bot
+  -e CC_TEST_REPORTER_ID=$CC_TEST_REPORTER_ID
+  ./cc-test-reporter after-build --exit-code 0 -t lcov
 notifications:
   slack:
     secure: gS8DOqLHTUUWpcimRfaxy6/Zexgbp91mdZ3N5556GkJEI90IV53JX+XuJkzMpR5GzmBcai8lb1ZaOGuhWXQl1785KG3pX4gW05GxHhxxuMXgHVQhkw+V48fPv6BJs4wsycDeU+xBeVp6FgeXGyfznDlYxuEdx4CvdvKcjh9QdWZ72iX5ghISzFzrK3RMZtMOSsWPixI2GLOPXR/1BpP7Uz7MzlwqgS7sP1i9AZhNpdsI5YKgiKgl0a1J6Qz3UAE5WF7GKIjde8f0G7blE5N0oiKIO8WPL7JwMlnNHXO0Yf/ghrcEZSO3FscdYdWSeBh7Ja/WGn/H8y9YHfZ7zNbxcOaOcQ2tK/KsOK2PsHa7mhHA/nIWZca0jjkvdNsgjol4P9jfkKBWF1wQSmtk8QYYRQoJTlkYVyMqhGlIeIseesQ4bqibU5O1U96g4kWNvz44d40XvUtTlhy1+4ihnFsNdJVds+MIKftCXUYeS8gUL8gBtMoNYgdBixU5GzfQexaEA4KU58Rv3x4dc1CGmkFIEwQWkxKKaHHthaKh7wFqoLK8EiV9BOAqfH92tqh4JxNrcdTjdX7Z515RYJRZTFmRlWXMHDZEywXxbWcqtGb3OPD/R/Kw4lbhkvRMs+32kE6pa47hgGCRiQnaPRUFrWgwrjIj6K9g1dmLjIAYa77oY4Y=
