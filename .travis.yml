@@ -15,7 +15,6 @@ before_install:
 # https://github.com/jetpackworkflow/rswag/blob/master/rswag/rswag.gemspec#L18
 - export TRAVIS_TAG=0.0.0
 # pender
-# also starts minio and redis
 - export PENDER_BRANCH=$((git ls-remote --exit-code --heads https://github.com/meedan/pender.git $TRAVIS_BRANCH >/dev/null && echo $TRAVIS_BRANCH) || echo 'develop')
 - echo "Using branch $PENDER_BRANCH for Pender"
 - git clone --branch=$PENDER_BRANCH https://github.com/meedan/pender.git

@@ -2,7 +2,17 @@ FROM node:10
 MAINTAINER Meedan <sysops@meedan.com>
 
 # install dependencies
-RUN apt-get update -qq && apt-get install -y redis-server --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN true \
+  && apt-get update -qq \
+  && apt-get install -y --no-install-recommends \
+  libidn11-dev \
+  lsof \
+  unzip \
+  curl \
+  build-essential \
+  libssl-dev \
+  zip \
+  && rm -rf /var/lib/apt/lists/*
 
 # node modules
 COPY ./package.json /tmp/package.json
