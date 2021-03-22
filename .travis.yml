@@ -31,7 +31,7 @@ before_script:
 - docker-compose exec bot cp config.js.example config.js
 - docker-compose exec bot cp aws.json.example aws.json
 - docker-compose exec bot npm run build
-script: docker-compose exec bot npm test
+script: docker-compose exec bot npm run test
 after_script:
 - docker-compose exec bot
   -e CC_TEST_REPORTER_ID=$CC_TEST_REPORTER_ID

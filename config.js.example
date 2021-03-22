@@ -21,7 +21,7 @@ const config = {
       smoochBotId: '<SLACK BOT APP ID>',
     },
   },
-  redisHost: 'localhost',
+  redisHost: 'redis',
   redisPrefix: 'local',
   awsRegion: 'local'
 };

@@ -22,7 +22,7 @@ const config = {
       smoochBotId: 'HGFEDCBA'
     }
   },
-  redisHost: 'localhost',
+  redisHost: 'redis',
   redisPrefix: 'qa',
   awsRegion: 'us-east-1',
   googleImageSearchFunctionName: 'google-image-search-test',
