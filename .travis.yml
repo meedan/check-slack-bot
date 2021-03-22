@@ -29,6 +29,7 @@ before_script:
 - docker-compose -f docker-compose.yml -f docker-test.yml up -d
 - docker-compose exec bot cp config.js.example config.js
 - docker-compose exec bot cp aws.json.example aws.json
+- docker-compose exec bot mkdir dist
 - docker-compose exec bot npm run build
 script: docker-compose exec bot npm test
 after_script:
