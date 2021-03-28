@@ -16,6 +16,8 @@ addons:
     - api.test
     - minio
     - redis
+    - elasticsearch
+    - postgres
   snaps:
     - name: node
       channel: 12/stable
