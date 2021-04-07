@@ -1,4 +1,3 @@
-const { exec } = require('child_process');
 const btoa = require('btoa');
 const fetch = require('node-fetch');
 let config = require('./config');
@@ -8,6 +7,7 @@ const {
   sleep,
   buildRandomString,
   callCheckApi,
+  redisSet,
 } = require('./test-helpers');
 
 jest.setTimeout(120000);
@@ -43,7 +43,7 @@ const projectData = async () => {
 const sendToRedis = async (response, channelId) => {
   const key = 'slack_channel_project:' + config.redisPrefix + ':' + channelId;
   const value = JSON.stringify({ team_slug: response.team.data.slug, project_id: response.project.data.dbid, project_title: response.project.data.title, project_url: response.projectUrl });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(5);
 };
 
@@ -232,7 +232,7 @@ test('reactivate Smooch bot', async () => {
   const annotation = await callCheckApi('dynamic_annotation', { set_action: 'deactivate', annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const data =  { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'reactivateBot' };
@@ -265,7 +265,7 @@ test('send message to Smooch bot', async () => {
   const annotation = await callCheckApi('dynamic_annotation', { set_action: 'deactivate', annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const data = { body: { team_id: 'T12345ABC', channel_id: 'test' }, matches: ['bot send Test', 'Test'], type: 'sendBot' };
@@ -291,7 +291,7 @@ test('send Smooch image', async () => {
 
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':' + channel;
   const value = JSON.stringify({ foo: 'bar' });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const data2 = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
@@ -319,7 +319,7 @@ test('cannot reactivate Smooch bot', async () => {
   const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: uid + ',test,' + JSON.stringify({ phone: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const data =  { body: { team_id: 'T12345ABC', channel_id: 'test' }, type: 'reactivateBot' };

@@ -21,7 +21,7 @@ exports.handler = function(data, context, callback) {
   let options = {
     url: 'https://www.google.com/searchbyimage',
     qs: { image_url: data.image_url },
-    headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11' }
+    headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36' }
   };
   
   request.get(options, function(err, res, body) {

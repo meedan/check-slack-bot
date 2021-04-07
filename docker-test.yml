@@ -1,0 +1,13 @@
+version: "2.2"
+networks:
+  default:
+    name: dev
+services:
+  api:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3000
+  pender:
+    environment:
+      RAILS_ENV: test
+      SERVER_PORT: 3200

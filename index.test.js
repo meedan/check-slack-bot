@@ -1,4 +1,3 @@
-const { exec } = require('child_process');
 const btoa = require('btoa');
 const atob = require('atob');
 let aws = require('aws-sdk');
@@ -10,7 +9,8 @@ const {
   sleep,
   buildRandomString,
   callCheckApi,
-  sendAction
+  sendAction,
+  redisSet,
 } = require('./test-helpers.js');
 
 const { humanAppName } = require('./helpers');
@@ -70,7 +70,7 @@ const testEditMedia = async (field) => {
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
   const st = await callCheckApi('get', { class: 'dynamic', id: pm.data.last_status_obj.id, fields: 'graphql_id' });
   const value = JSON.stringify({ mode: 'edit_' + field, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, last_status_id: st.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const event = { channel: 'test', thread_ts, user: uid, text: `Changed ${field}` };
@@ -121,7 +121,7 @@ test('identify Slack user and create comment', async () => {
   const thread_ts = new Date().getTime();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
   const value = JSON.stringify({ mode: 'comment', object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const event = { channel: 'test', thread_ts, user: uid, text: 'Test' };
@@ -333,7 +333,7 @@ const buttonAction = async (mode) => {
   const thread_ts = buildRandomString();
   const key = 'slack_message_ts:' + config.redisPrefix + ':' + thread_ts;
   const value = JSON.stringify({ mode, object_type: 'project_media', object_id: pm.data.id, link: '', team_slug: team.data.slug, graphql_id: pm.data.graphql_id, currentUser: uid, slackMessageData: { user: { id: uid }, callback_id: JSON.stringify({ id: buildRandomString() }), original_message: { attachments: [{ actions: [] }] } } });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const event = { channel: 'test', thread_ts, user: '654321' };
@@ -412,7 +412,7 @@ test('move Smooch conversation to "human mode" in Smooch conversation', async ()
   const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'bot', annotation_id: annotation.data.graphql_id });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const event = { bot_id: 'ABCDEFGH', text: 'Test', username: 'Test replied', channel: 'test' };
@@ -437,7 +437,7 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
-  await exec(`redis-cli set ${key} '${value}'`);
+  await redisSet(key, value);
   await sleep(3);
 
   const event = { type: 'channel_archive', channel: 'test' };

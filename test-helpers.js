@@ -1,3 +1,4 @@
+const { exec } = require('child_process');
 const btoa = require('btoa');
 const fetch = require('node-fetch');
 const config = require('./config');
@@ -100,11 +101,16 @@ const sendAction = async (action, callback_id, image_url) => {
   return { outputData, callback };
 };
 
+const redisSet = async (key, value) => {
+  await exec(`redis-cli -h ${config.redisHost} set ${key} '${value}'`);
+};
+
 module.exports = {
   buildData,
   buildPayload,
   sleep,
   buildRandomString,
   callCheckApi,
-  sendAction
+  sendAction,
+  redisSet,
 };

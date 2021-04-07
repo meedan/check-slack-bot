@@ -1,7 +1,7 @@
 const config = {
   appName: 'check',
   checkApi: {
-    url: 'http://localhost:3000',
+    url: 'http://api:3000',
     apiKey: 'test',
     httpAuth: false
   },
@@ -22,8 +22,8 @@ const config = {
       smoochBotId: 'HGFEDCBA'
     }
   },
-  redisHost: 'localhost',
-  redisPrefix: 'qa',
+  redisHost: 'redis',
+  redisPrefix: 'check-slack-bot-test',
   awsRegion: 'us-east-1',
   googleImageSearchFunctionName: 'google-image-search-test',
   slashResponseFunctionName: 'slash-response-test'
