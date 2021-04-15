@@ -64,7 +64,7 @@ const sendErrorMessage = function(e, vars, text, team_id, responseUrl, callback)
 
 const createProjectMedia = function(team_id, responseUrl, vars, token, data, callback) {
   const mutationQuery = `($pid: Int!, $url: String!, $clientMutationId: String!) {
-    createProjectMedia: createProjectMedia(input: { clientMutationId: $clientMutationId, url: $url, add_to_project_id: $pid }) {
+    createProjectMedia: createProjectMedia(input: { clientMutationId: $clientMutationId, url: $url, project_id: $pid }) {
       project_media {
         dbid
         oembed_metadata
