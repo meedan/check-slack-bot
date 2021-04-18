@@ -238,6 +238,16 @@ const process = function(event, callback, teamConfig) {
         else if (/Twitter DM/.test(field.value)) {
           identifier = field.value.match(/profile_images\/([0-9]+)\//)[1];
         }
+        else if (/Telegram Messenger/.test(field.value)) {
+          // For Telegram, there is no unique piece of information we can use to identify which user this Slack channel belongs to
+          identifier = null;
+        }
+        else if (/Viber Messenger/.test(field.value)) {
+          identifier = field.value.match(/dlid=([^&]+)/)[1].substring(0, 27);
+        }
+        else if (/LINE Messenger/.test(field.value)) {
+          identifier = field.value.match(/sprofile\.line-scdn\.net\/(.*)/)[1];
+        }
 
         // Clean up if it's a link
         if (identifier && /\|/.test(identifier)) {

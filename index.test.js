@@ -546,6 +546,30 @@ test('get annotation related to Smooch conversation', async () => {
   const data7 = buildData('123456abcdef', 'event_callback', event7);
   index.handler(data7, null, callback);
   await sleep(3);
+
+  outputData = ''
+  const event8 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Telegram Messenger' }] }] };
+  const data8 = buildData('123456abcdef', 'event_callback', event8);
+  index.handler(data8, null, callback);
+  await sleep(3);
+
+  outputData = ''
+  const event9 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Viber Messenger | Profile Photo: https://media-direct.cdn.viber.com/download_photo?dlid=' + identifier + '&fltp=jpg&imsz=0000' }] }] };
+  const data9 = buildData('123456abcdef', 'event_callback', event9);
+  index.handler(data9, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Associated with annotation ' + id);
+  expect(callback).toHaveBeenCalledWith(null);
+
+  outputData = ''
+  const event10 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: LINE Messenger | Profile Photo: https://sprofile.line-scdn.net/' + identifier }] }] };
+  const data10 = buildData('123456abcdef', 'event_callback', event10);
+  index.handler(data10, null, callback);
+  await sleep(3);
+
+  expect(outputData).toMatch('Associated with annotation ' + id);
+  expect(callback).toHaveBeenCalledWith(null);
 });
 
 test('avoid parsing the same Slack event more than once', async () => {
