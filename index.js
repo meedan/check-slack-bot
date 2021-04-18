@@ -246,7 +246,7 @@ const process = function(event, callback, teamConfig) {
           identifier = field.value.match(/dlid=([^&]+)/)[1].substring(0, 27);
         }
         else if (/LINE Messenger/.test(field.value)) {
-          identifier = field.value.match(/sprofile\.line-scdn\.net\/(.*)/)[1];
+          identifier = field.value.match(/sprofile\.line-scdn\.net\/([^|]+)/)[1];
         }
 
         // Clean up if it's a link
