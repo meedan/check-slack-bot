@@ -192,7 +192,7 @@ test('parse Slack message with Check URL that does not exist', async () => {
   const callback = jest.fn();
   index.handler(data, null, callback);
   await sleep(3);
-  expect(outputData).toBe("GraphQL query exception: Error: GraphQL Error: Couldn't find ProjectMedia with 'id'=0");
+  expect(outputData).toMatch("RecordNotFound");
   expect(callback).toHaveBeenCalledWith(null);
 });
 
