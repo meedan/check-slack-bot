@@ -261,7 +261,7 @@ const process = function(event, callback, teamConfig) {
       let n = 0;
 
       const fieldCallback = function(resp) {
-        if (!resp && n < 20) {
+        if (!resp && n < 60) {
           n++;
           setTimeout(function() { getField(query, callback, fieldCallback) }, 5000);
         }
