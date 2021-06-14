@@ -10,7 +10,7 @@ const {
 
 jest.setTimeout(120000);
 
-const timeout = 20;
+const timeout = 60;
 
 test('search for image', async () => {
   let outputData = '';
