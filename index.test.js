@@ -15,7 +15,7 @@ const {
 
 const { humanAppName } = require('./helpers');
 
-jest.setTimeout(300000);
+jest.setTimeout(900000);
 
 const buildData = (token, type, event) => {
   const data = {
