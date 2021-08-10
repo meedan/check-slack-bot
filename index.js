@@ -18,13 +18,9 @@ const getField = function(query, callback, done) {
       annotation {
         id
         dbid
-        project {
+        team {
+          slug
           url
-          title
-          dbid
-          team {
-            slug
-          }
         }
       }
     }
@@ -266,14 +262,11 @@ const process = function(event, callback, teamConfig) {
           setTimeout(function() { getField(query, callback, fieldCallback) }, 5000);
         }
         else if (resp) {
-          const projectUrl = resp.annotation.project.url;
-          const projectTitle = resp.annotation.project.title;
-          const projectId = resp.annotation.project.dbid;
-          const teamSlug = resp.annotation.project.team.slug;
-
-          const value = { team_slug: teamSlug, project_id: projectId, project_title: projectTitle, project_url: projectUrl };
+          const teamUrl = resp.annotation.team.url;
+          const teamSlug = resp.annotation.team.slug;
+          const value = { team_slug: teamSlug };
           const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
-          const message = { text: t('project_set') + ': ' + projectUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
+          const message = { text: t('team_set') + ': ' + teamUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
 
           const redis = getRedisClient();
           redis.on('connect', function() {
