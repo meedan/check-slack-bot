@@ -61,14 +61,13 @@ exports.handler = function(data, context, callback) {
       }
     }
   
-    json.token = data.access_token;
     json.replace_original = false;
     json.delete_original = false;
     json.thread_ts = data.thread_ts;
     json.channel = data.channel.id;
 
     const query = qs.stringify(json);
-    https.get('https://slack.com/api/chat.postMessage?' + query);
+    https.get('https://slack.com/api/chat.postMessage?' + query, { headers: { Authorization: 'Bearer ' + data.access_token } });
   
     callback(null);
   });

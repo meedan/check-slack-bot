@@ -195,11 +195,10 @@ const process = function(event, callback, teamConfig) {
                 // FIXME: Localize it with t('function') in the future
                 text: "The bot has been de-activated for this conversation. You can now communicate directly to the user in this channel. To reactivate the bot, type `/check bot activate`. <https://intercom.help/meedan/en/articles/3365307-slack-integration|Learn about more features of the Slack integration here.>",
                 response_type: 'in_channel',
-                token: ACCESS_TOKEN,
                 channel: event.channel
               };
               const query = qs.stringify(message);
-              https.get('https://slack.com/api/chat.postMessage?' + query);
+              https.get('https://slack.com/api/chat.postMessage?' + query, { headers: { Authorization: 'Bearer ' + ACCESS_TOKEN } });
             }
           });
         }
@@ -266,7 +265,7 @@ const process = function(event, callback, teamConfig) {
           const teamSlug = resp.annotation.team.slug;
           const value = { team_slug: teamSlug };
           const value2 = { team_slug: teamSlug, annotation_id: resp.annotation.id, mode: 'bot' };
-          const message = { text: t('team_set') + ': ' + teamUrl, response_type: 'in_channel', token: ACCESS_TOKEN, channel: event.channel };
+          const message = { text: t('team_set') + ': ' + teamUrl, response_type: 'in_channel', channel: event.channel };
 
           const redis = getRedisClient();
           redis.on('connect', function() {
@@ -279,7 +278,7 @@ const process = function(event, callback, teamConfig) {
               setSmoochUserSlackChannelUrl(event, { teamId: teamConfig.teamId, id: resp.annotation.dbid }, config.checkApi.apiKey, callback, function(resp2) {
                 console.log('Added Slack channel URL to Smooch user annotation ' + resp2.smoochBotAddSlackChannelUrl.annotation.dbid);
                 const query = qs.stringify(message);
-                https.get('https://slack.com/api/chat.postMessage?' + query, function() {
+                https.get('https://slack.com/api/chat.postMessage?' + query, { headers: { Authorization: 'Bearer ' + ACCESS_TOKEN } }, function() {
                   callback(null);
                 });
               });
@@ -311,7 +310,6 @@ const process = function(event, callback, teamConfig) {
 
       getProjectMedia(teamSlug, projectId, projectMediaId, callback, function(data) {
         const message = {
-          token: ACCESS_TOKEN,
           channel: event.channel,
           attachments: JSON.stringify(formatMessageFromData(data))
         };
@@ -324,8 +322,9 @@ const process = function(event, callback, teamConfig) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': query.length
-          }
+            'Content-Length': query.length,
+            'Authorization': 'Bearer ' + ACCESS_TOKEN,
+          },
         };
         const request = https.request(options, (res) => {
           console.log('Slack response status code: ' + res.statusCode);
@@ -383,9 +382,9 @@ const process = function(event, callback, teamConfig) {
                 if (data.mode === 'comment') {
                   createComment(event, data, token, callback, function(resp) {
                     const message = { text: t('your_note_was_added'), thread_ts: event.thread_ts, replace_original: false, delete_original: false,
-                                      response_type: 'ephemeral', token: ACCESS_TOKEN, channel: event.channel };
+                                      response_type: 'ephemeral', channel: event.channel };
                     const query = qs.stringify(message);
-                    https.get('https://slack.com/api/chat.postMessage?' + query);
+                    https.get('https://slack.com/api/chat.postMessage?' + query, { headers: { Authorization: 'Bearer ' + ACCESS_TOKEN } });
                   });
                 }
 
@@ -412,10 +411,9 @@ const process = function(event, callback, teamConfig) {
 };
 
 const sendErrorMessage = function(callback, thread, channel, link) {
-  const message = { text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ' ' + link, thread_ts: thread, replace_original: false, delete_original: false,
-                    response_type: 'ephemeral', token: ACCESS_TOKEN, channel: channel };
+  const message = { text: t('Sorry,_seems_that_you_do_not_have_the_permission_to_do_this._Please_go_to_the_app_and_login_by_your_Slack_user,_or_continue_directly_from_there') + ' ' + link, thread_ts: thread, replace_original: false, delete_original: false, response_type: 'ephemeral', channel: channel };
   const query = qs.stringify(message);
-  https.get('https://slack.com/api/chat.postMessage?' + query);
+  https.get('https://slack.com/api/chat.postMessage?' + query, { headers: { Authorization: 'Bearer ' + ACCESS_TOKEN } });
 };
 
 const createComment = function(event, data, token, callback, done) {
