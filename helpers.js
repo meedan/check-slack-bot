@@ -253,6 +253,38 @@ const humanAppName = function() {
   return config.appName.charAt(0).toUpperCase() + config.appName.slice(1);
 };
 
+const getIdentifier = function(text) {
+  let identifier = null;
+  // The identifier is different depending on the platform
+  if (/WhatsApp Messenger/.test(text)) {
+    identifier = text.match(/Phone Number:\s(.*)/)[1];
+  }
+  else if (/Facebook Messenger/.test(text)) {
+    identifier = text.match(/psid=([0-9]+)/)[1];
+  }
+  else if (/Twitter DM/.test(text)) {
+    identifier = text.match(/profile_images\/([0-9]+)\//)[1];
+  }
+  else if (/Telegram Messenger/.test(text)) {
+    // For Telegram, there is no unique piece of information we can use to identify which user this Slack channel belongs to
+    identifier = null;
+  }
+  else if (/Viber Messenger/.test(text)) {
+    identifier = text.match(/dlid=([^&]+)/)[1].substring(0, 27);
+  }
+  else if (/LINE Messenger/.test(text)) {
+    identifier = text.match(/sprofile\.line-scdn\.net\/([^|]+)/)[1];
+  }
+
+  // Clean up if it's a link
+  if (identifier && /\|/.test(identifier)) {
+    const unlinked = identifier.replace(/<[^|]+\|/, '').replace('>', '').replace(/\s+/, ' ');
+    identifier = decodeURIComponent(unlinked);
+  }
+
+  return identifier;
+};
+
 module.exports = {
   t,
   formatMessageFromData,
@@ -265,5 +297,6 @@ module.exports = {
   saveAndReply,
   saveToRedisAndReplyToSlack,
   projectMediaCreatedMessage,
-  humanAppName
+  humanAppName,
+  getIdentifier,
 };

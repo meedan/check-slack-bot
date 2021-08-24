@@ -7,7 +7,7 @@ const config = require('./config.js'),
       util = require('util');
 let ACCESS_TOKEN = null;
 
-const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack, saveAndReply } = require('./helpers.js');
+const { executeMutation, verify, getCheckSlackUser, getRedisClient, formatMessageFromData, t, getGraphqlClient, getTeamConfig, projectMediaCreatedMessage, saveToRedisAndReplyToSlack, saveAndReply, getIdentifier } = require('./helpers.js');
 
 const getField = function(query, callback, done) {
   const client = getGraphqlClient(null, config.checkApi.apiKey, callback);
@@ -222,32 +222,7 @@ const process = function(event, callback, teamConfig) {
         appName = field.value;
       }
       if (field.title === 'Device Info') {
-
-        // The identifier is different depending on the platform
-        if (/WhatsApp Messenger/.test(field.value)) {
-          identifier = field.value.match(/Phone Number: (.*)/)[1];
-        }
-        else if (/Facebook Messenger/.test(field.value)) {
-          identifier = field.value.match(/psid=([0-9]+)/)[1];
-        }
-        else if (/Twitter DM/.test(field.value)) {
-          identifier = field.value.match(/profile_images\/([0-9]+)\//)[1];
-        }
-        else if (/Telegram Messenger/.test(field.value)) {
-          // For Telegram, there is no unique piece of information we can use to identify which user this Slack channel belongs to
-          identifier = null;
-        }
-        else if (/Viber Messenger/.test(field.value)) {
-          identifier = field.value.match(/dlid=([^&]+)/)[1].substring(0, 27);
-        }
-        else if (/LINE Messenger/.test(field.value)) {
-          identifier = field.value.match(/sprofile\.line-scdn\.net\/([^|]+)/)[1];
-        }
-
-        // Clean up if it's a link
-        if (identifier && /\|/.test(identifier)) {
-          identifier = decodeURIComponent(identifier.split('|')[1]).replace('>', '');
-        }
+        identifier = getIdentifier(field.value);
       }
     });
     if (appName && identifier) {

@@ -1,5 +1,6 @@
 let config = require('./config');
 const Lokka = require('lokka').Lokka;
+const md5 = require('js-md5');
 
 const {
   buildData,
@@ -18,7 +19,8 @@ const {
   getCheckSlackUser,
   verify,
   executeMutation,
-  getTeamConfig
+  getTeamConfig,
+  getIdentifier
 } = require('./helpers');
 
 jest.setTimeout(120000);
@@ -112,4 +114,11 @@ test('team configuration', () => {
   expect(teamconf).toEqual(expect.objectContaining({ verificationToken: '123456abcdef' }));
   teamconf = getTeamConfig('invalid');
   expect(teamconf).toEqual({});
+});
+
+test('sanitize phone number', async () => {
+  const text = 'Device: WhatsApp Messenger - Phone Number: +49 <tel:15147763076|1514 7763076>';
+  const identifier = getIdentifier(text);
+  expect(identifier).toEqual('+49 1514 7763076');
+  expect(md5(identifier)).toEqual('cf8a90dde3e206bedb3adccd1996791c');
 });
