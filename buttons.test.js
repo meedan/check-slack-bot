@@ -91,6 +91,7 @@ test('identify Slack user and handle change_status command', async () => {
   let es = config.appName === 'check' ? 'undetermined' : 'pending';
   expect(pm.data.last_status).toBe(es);
   const { outputData, callback } = await sendAction({ name: 'change_status', selected_options: [{ value: 'in_progress' }] }, callback_id);
+  await sleep(3);
   expect(outputData).not.toMatch('Error');
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: [expect.objectContaining({ title: expect.stringContaining('IN PROGRESS: Media Title') })] }));
   pm = await callCheckApi('get', { class: 'project_media', id: pm.data.id, fields: 'last_status' });
