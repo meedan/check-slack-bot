@@ -227,6 +227,7 @@ const process = function(event, callback, teamConfig) {
     });
     if (appName && identifier) {
       const query = JSON.stringify({ field_name: 'smooch_user_data', json: { app_name: appName, identifier: md5(identifier) } });
+      console.log('Looking for annotation in Check with identifier ' + identifier + ' and hash ' + md5(identifier));
 
       let n = 0;
 
