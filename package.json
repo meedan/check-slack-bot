@@ -14,7 +14,7 @@
     "js-md5": "^0.7.3",
     "lokka": "^1.7.0",
     "lokka-transport-http": "^1.6.1",
-    "node-fetch": "^2.1.1",
+    "node-fetch": "^3.1.1",
     "redis": "^3.1.1",
     "request": "^2.83.0",
     "util": "^0.10.3"
