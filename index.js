@@ -14,7 +14,7 @@ const getField = function(query, callback, done) {
 
   const fieldQuery = `
   query dynamic_annotation_field($query: String!) {
-    dynamic_annotation_field(query: $query, only_cache: false) {
+    dynamic_annotation_field(query: $query, only_cache: true) {
       annotation {
         id
         dbid
