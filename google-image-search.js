@@ -20,8 +20,8 @@ const { t } = require('./helpers.js');
 exports.handler = function(data, context, callback) {
   let options = {
     url: 'https://www.google.com/searchbyimage',
-    qs: { image_url: data.image_url },
-    headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36' }
+    qs: { image_url: data.image_url, sbisrc: '4chanx', safe: 'off' },
+    headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36', 'accept-language': 'en-US,en;q=0.5' }
   };
   
   request.get(options, function(err, res, body) {
