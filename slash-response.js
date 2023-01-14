@@ -256,12 +256,7 @@ const sendSmoochImage = function(payload, callback) {
                   callback(null);
                 });
                 console.log('Sent image: ' + link);
-              })
-              .catch((err) => {
-                console.log(err.message);
-                console.log("\n")
               });
-            ;
             }
             else {
               console.log('Could not send image');
