@@ -12,7 +12,7 @@ jest.setTimeout(120000);
 
 const timeout = 20;
 
-test('search for image', async () => {
+test('search for imagezz', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);

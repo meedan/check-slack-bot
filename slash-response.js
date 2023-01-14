@@ -248,7 +248,7 @@ const sendSmoochImage = function(payload, callback) {
               const data = Buffer.from(body).toString('base64');
               imgur.uploadBase64(data)
               .then(function(json) {
-                const link = json.data.link;
+                const link = json.link;
                 const text = payload.body.text.replace(/^\/sk /, '');
                 const message = { token: teamConfig.legacyToken, channel: payload.body.channel, command: '/sk', text: '![' + text + '](' + link + ')' };
                 const query = qs.stringify(message);
@@ -256,7 +256,12 @@ const sendSmoochImage = function(payload, callback) {
                   callback(null);
                 });
                 console.log('Sent image: ' + link);
+              })
+              .catch((err) => {
+                console.log(err.message);
+                console.log("\n")
               });
+            ;
             }
             else {
               console.log('Could not send image');

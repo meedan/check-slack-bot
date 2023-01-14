@@ -88,7 +88,7 @@ test('call set project if type is setProject', () => {
 test('return error message if cannot find project and type is setProject', async () => {
   const projectUrl = config.checkWeb.url + '/my-team/project/1';
   const user = await createUser();
-  const data = { type: "setProject", body: { team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/'}, matches: [projectUrl, 'my-team', '1'], user_token: user.data.token};
+  const data = { type: "setProject", body: { team_id: 'T12345ABC', responseUrl: 'https://hooks.slack.com/'}, matches: [projectUrl, 'my-team2', '2'], user_token: user.data.token};
   const callback = jest.fn();
 
   let outputData = '';
@@ -294,7 +294,7 @@ test('send Smooch image', async () => {
   await redisSet(key, value);
   await sleep(3);
 
-  const data2 = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://picsum.photos/id/237/200/300' }] }, type: 'sendSmoochImage' };
+  const data2 = { body: { channel, text: '/sk Test', files: [{ url_private: 'https://blog.imgur.com/wp-content/uploads/2018/02/favicon-196x196.png' }] }, type: 'sendSmoochImage' };
   sr.handler(data2, null, callback);
   await sleep(5);
   expect(outputData).toMatch('Sent image: https://i.imgur.com');
