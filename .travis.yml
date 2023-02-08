@@ -38,7 +38,8 @@ before_script:
 - docker-compose exec bot bash -c 'cc-test-reporter before-build'
 - until curl --silent -I -f --fail http://localhost:3000 ; do printf .; sleep 1; done
 - until curl --silent -I -f --fail http://localhost:3200 ; do printf .; sleep 1; done
-script: docker-compose exec bot npm run test
+- docker-compose logs -t -f &
+script: docker-compose exec bot npm run jest-ut2
 after_script:
 - docker-compose exec
   -e TRAVIS_BRANCH=$TRAVIS_BRANCH

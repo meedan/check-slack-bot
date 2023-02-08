@@ -400,16 +400,16 @@ test('call Lambda function locally when image is uploaded to Smooch conversation
   config.awsRegion = awsRegion;
 });
 
-test('move Smooch conversation to "human mode" in Smooch conversation', async () => {
+test('move Smooch conversation to "human mode" in Smooch conversation zez' , async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
-  console['log'] = jest.fn(storeLog);
+  // console['log'] = jest.fn(storeLog);
 
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test1,test2,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'bot', annotation_id: annotation.data.graphql_id });
   await redisSet(key, value);
@@ -434,7 +434,7 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test1,test2,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
   await redisSet(key, value);
@@ -455,7 +455,7 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   expect(callback).toHaveBeenCalledWith(null);
 });
 
-test('get annotation related to Smooch conversation', async () => {
+test('get annotation related to Smooch conversation ziz', async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);

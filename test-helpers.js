@@ -62,6 +62,8 @@ const buildRandomString = (times) => {
 };
 
 const callCheckApi = async (path, params) => {
+  console.log("path: ", path)
+  console.log("params: ", params)
   let querystring = [];
   for (let key in params) {
     querystring.push(key + '=' + params[key]);
@@ -74,7 +76,9 @@ const callCheckApi = async (path, params) => {
   }
   let url = config.checkApi.url + '/test/' + path + querystring;
   const res = await fetch(url);
+  console.log("res: ", res)
   const json = await res.json();
+  console.log("json: ", json)
   if (path === 'user') {
     json.data["uid"] = params.uid
   }
