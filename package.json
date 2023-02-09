@@ -26,6 +26,7 @@
   },
   "scripts": {
     "test": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest --coverage --collectCoverageFrom=*.js --collectCoverageFrom=!test-helpers.js --collectCoverageFrom=!server.js; code=$?; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
+    "test-ut": "mv config.js config.js.bkp; mv aws.json aws.json.bkp; cp config.js.test config.js; cp aws.json.example aws.json; jest -t 'zez'; mv config.js.bkp config.js; mv aws.json.bkp aws.json; exit $code",
     "jest-ut": "jest -t 'zaz'",
     "jest-ut2": "jest -t 'zez'",
     "jest-ut3": "jest -t 'ziz'",
