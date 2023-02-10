@@ -403,7 +403,7 @@ test('call Lambda function locally when image is uploaded to Smooch conversation
 test('move Smooch conversation to "human mode" in Smooch conversation zez' , async () => {
   let outputData = '';
   storeLog = inputs => (outputData += inputs);
-  // console['log'] = jest.fn(storeLog);
+  console['log'] = jest.fn(storeLog);
 
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
