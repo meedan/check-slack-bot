@@ -434,7 +434,7 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test1,test2,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test3,test4,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
   const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
   const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
   await redisSet(key, value);
@@ -477,7 +477,7 @@ test('get annotation related to Smooch conversation ziz', async () => {
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
 
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: md5(identifier), app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test5,test6,' + JSON.stringify({ identifier: md5(identifier), app_name: 'Test' }) });
   const id = atob(annotation.data.graphql_id).split('/')[1];
   const annotation2 = await callCheckApi('get', { class: 'dynamic', id: parseInt(id, 10), fields: 'get_fields' });
   let value = '';
