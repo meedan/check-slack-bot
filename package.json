@@ -10,7 +10,7 @@
     "btoa": "^1.1.2",
     "cheerio": "^1.0.0-rc.2",
     "html-entities": "^1.2.1",
-    "imgur": "^1.0.0",
+    "imgur": "^2.2.0",
     "js-md5": "^0.7.3",
     "lokka": "^1.7.0",
     "lokka-transport-http": "^1.6.1",
