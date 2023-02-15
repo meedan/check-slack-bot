@@ -405,17 +405,18 @@ test('move Smooch conversation to "human mode" in Smooch conversation', async ()
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
+  const id = buildRandomString();
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
-  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: id + ',test,' + JSON.stringify({ identifier: buildRandomString(), app_name: 'Test' }) });
+  const key = 'slack_channel_smooch:' + config.redisPrefix + ':' + id;
   const value = JSON.stringify({ mode: 'bot', annotation_id: annotation.data.graphql_id });
   await redisSet(key, value);
   await sleep(3);
 
-  const event = { bot_id: 'ABCDEFGH', text: 'Test', username: 'Test replied', channel: 'test' };
+  const event = { bot_id: 'ABCDEFGH', text: 'Test', username: 'Test replied', channel: id };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -430,19 +431,29 @@ test('move Smooch conversation to "bot mode" in Smooch conversation', async () =
   storeLog = inputs => (outputData += inputs);
   console['log'] = jest.fn(storeLog);
 
+  const callback = jest.fn();
+  const id = buildRandomString();
   const email = buildRandomString() + '@test.com';
   const user = await callCheckApi('user', { email });
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: '123', app_name: 'Test' }) });
-  const key = 'slack_channel_smooch:' + config.redisPrefix + ':test';
-  const value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: id + ',test,' + JSON.stringify({ identifier: buildRandomString(), app_name: 'Test' }) });
+
+  let key = 'slack_channel_smooch:' + config.redisPrefix + ':' + id;
+  let value = JSON.stringify({ mode: 'bot', annotation_id: annotation.data.graphql_id });
   await redisSet(key, value);
   await sleep(3);
+  let event = { bot_id: 'ABCDEFGH', text: 'Test', username: 'Test replied', channel: id };
+  let data = buildData('123456abcdef', 'event_callback', event);
+  index.handler(data, null, callback);
+  await sleep(3);
 
-  const event = { type: 'channel_archive', channel: 'test' };
-  const data = buildData('123456abcdef', 'event_callback', event);
-  const callback = jest.fn();
+  key = 'slack_channel_smooch:' + config.redisPrefix + ':' + id;
+  value = JSON.stringify({ mode: 'human', annotation_id: annotation.data.graphql_id });
+  await redisSet(key, value);
+  await sleep(3);
+  event = { type: 'channel_archive', channel: id };
+  data = buildData('123456abcdef', 'event_callback', event);
   index.handler(data, null, callback);
   await sleep(3);
 
@@ -461,8 +472,9 @@ test('get annotation related to Smooch conversation', async () => {
   console['log'] = jest.fn(storeLog);
 
   outputData = ''
+  const uid = buildRandomString();
   const identifier = new Date().getTime().toString();
-  const event = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: ' + identifier }] }] };
+  const event = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: ' + identifier }] }] };
   const data = buildData('123456abcdef', 'event_callback', event);
   const callback = jest.fn();
   index.handler(data, null, callback);
@@ -477,7 +489,7 @@ test('get annotation related to Smooch conversation', async () => {
   const team = await callCheckApi('team', { email });
   const project = await callCheckApi('project', { team_id: team.data.dbid });
 
-  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: 'test,test,' + JSON.stringify({ identifier: md5(identifier), app_name: 'Test' }) });
+  const annotation = await callCheckApi('dynamic_annotation', { annotated_type: 'Project', annotated_id: project.data.dbid, annotation_type: 'smooch_user', fields: 'id,app_id,data', types: 'text,text,json', values: uid + ',test,' + JSON.stringify({ identifier: md5(identifier), app_name: 'Test' }) });
   const id = atob(annotation.data.graphql_id).split('/')[1];
   const annotation2 = await callCheckApi('get', { class: 'dynamic', id: parseInt(id, 10), fields: 'get_fields' });
   let value = '';
@@ -497,7 +509,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event2 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'Foo', value: 'Bar' }] }] };
+  const event2 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'Foo', value: 'Bar' }] }] };
   const data2 = buildData('123456abcdef', 'event_callback', event2);
   index.handler(data2, null, callback);
   await sleep(3);
@@ -506,7 +518,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event3 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: \u003ctel:' + identifier + '|' + identifier + '\u003e' }] }] };
+  const event3 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: \u003ctel:' + identifier + '|' + identifier + '\u003e' }] }] };
   const data3 = buildData('123456abcdef', 'event_callback', event3);
   index.handler(data3, null, callback);
   await sleep(3);
@@ -515,7 +527,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event4 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: <tel:' + identifier + '|' + identifier + '>' }] }] };
+  const event4 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: WhatsApp Messenger | Phone Number: <tel:' + identifier + '|' + identifier + '>' }] }] };
   const data4 = buildData('123456abcdef', 'event_callback', event4);
   index.handler(data4, null, callback);
   await sleep(3);
@@ -524,7 +536,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event5 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Facebook Messenger | Profile Image: https://facebook.com/psid=' + identifier }] }] };
+  const event5 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Facebook Messenger | Profile Image: https://facebook.com/psid=' + identifier }] }] };
   const data5 = buildData('123456abcdef', 'event_callback', event5);
   index.handler(data5, null, callback);
   await sleep(3);
@@ -533,7 +545,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event6 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Twitter DM | Profile Image: https://twitter.com/profile_images/' + identifier + '/image.png' }] }] };
+  const event6 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Twitter DM | Profile Image: https://twitter.com/profile_images/' + identifier + '/image.png' }] }] };
   const data6 = buildData('123456abcdef', 'event_callback', event6);
   index.handler(data6, null, callback);
   await sleep(3);
@@ -542,19 +554,19 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event7 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Other' }] }] };
+  const event7 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Other' }] }] };
   const data7 = buildData('123456abcdef', 'event_callback', event7);
   index.handler(data7, null, callback);
   await sleep(3);
 
   outputData = ''
-  const event8 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Telegram Messenger' }] }] };
+  const event8 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Telegram Messenger' }] }] };
   const data8 = buildData('123456abcdef', 'event_callback', event8);
   index.handler(data8, null, callback);
   await sleep(3);
 
   outputData = ''
-  const event9 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Viber Messenger | Profile Photo: https://media-direct.cdn.viber.com/download_photo?dlid=' + identifier + '&fltp=jpg&imsz=0000' }] }] };
+  const event9 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: Viber Messenger | Profile Photo: https://media-direct.cdn.viber.com/download_photo?dlid=' + identifier + '&fltp=jpg&imsz=0000' }] }] };
   const data9 = buildData('123456abcdef', 'event_callback', event9);
   index.handler(data9, null, callback);
   await sleep(3);
@@ -563,7 +575,7 @@ test('get annotation related to Smooch conversation', async () => {
   expect(callback).toHaveBeenCalledWith(null);
 
   outputData = ''
-  const event10 = { channel: 'test', bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: LINE Messenger | Profile Photo: https://sprofile.line-scdn.net/' + identifier }] }] };
+  const event10 = { channel: uid, bot_id: 'ABCDEFGH', attachments: [{ fields: [{ title: 'App', value: 'Test' }, { title: 'Device Info', value: 'Device: LINE Messenger | Profile Photo: https://sprofile.line-scdn.net/' + identifier }] }] };
   const data10 = buildData('123456abcdef', 'event_callback', event10);
   index.handler(data10, null, callback);
   await sleep(3);
