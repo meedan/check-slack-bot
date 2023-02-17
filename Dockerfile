@@ -1,4 +1,4 @@
-FROM node:10
+FROM node:14
 MAINTAINER Meedan <sysops@meedan.com>
 
 # install dependencies
