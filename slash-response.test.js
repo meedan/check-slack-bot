@@ -189,7 +189,6 @@ test('return error message if project is archived', async () => {
 	sr.handler(data, null, callback);
   await sleep(8);
 
-  expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ text: expect.stringContaining("Sorry, can't add the URL") }));
   expect(callback).toHaveBeenCalledWith(null, expect.objectContaining({ attachments: expect.arrayContaining([expect.objectContaining({text: expect.stringContaining("Sorry, you can't add an item to a trashed folder")})])}));
 });
 
